@@ -188,11 +188,15 @@ macro_rules! do_gen(
             Ok(($i,$idx))
         }
     );
-    (__impl $i:expr, $idx:expr, $e:ident >> $($rest:tt)*) => (
-        do_gen!(__impl $i, $idx, gen_call!($e) >> $($rest)*)
-    );
     (__impl $i:expr, $idx:expr, $e:ident( $($args:tt)* )) => (
         do_gen!(__impl $i, $idx, gen_call!($e,$($args)*))
+    );
+    (__impl $i:expr, $idx:expr, $submac:ident!( $($args:tt)* )) => (
+        $submac!(($i,$idx), $($args)*)
+    );
+
+    (__impl $i:expr, $idx:expr, $e:ident >> $($rest:tt)*) => (
+        do_gen!(__impl $i, $idx, gen_call!($e) >> $($rest)*)
     );
     (__impl $i:expr, $idx:expr, $e:ident( $($args:tt)* ) >> $($rest:tt)*) => (
         do_gen!(__impl $i, $idx, gen_call!($e,$($args)*) >> $($rest)*)
@@ -207,8 +211,12 @@ macro_rules! do_gen(
             }
         }
     );
-    (__impl $i:expr, $idx:expr, $submac:ident!( $($args:tt)* )) => (
-        $submac!(($i,$idx), $($args)*)
+
+    (__impl $i:expr, $idx:expr, $e:ident : $($rest:tt)*) => (
+        {
+            let $e = $idx;
+            do_gen!(__impl $i, $idx, $($rest)*)
+        }
     );
 
     ( ($i:expr, $idx:expr), $($rest:tt)*) => (
@@ -284,6 +292,47 @@ macro_rules! gen_many(
     );
 );
 
+#[macro_export]
+macro_rules! gen_at_offset(
+    (($i:expr, $idx:expr), $offset:expr, $f:ident( $($args:tt)* )) => (
+        match $i.len() < $offset {
+            false => {
+                match $f(($i,$offset), $($args)*) {
+                    Ok((r,_)) => Ok((r,($idx))),
+                    Err(e)    => Err(e),
+                }
+            },
+            true  => Err(GenError::BufferTooSmall($offset)),
+        }
+    );
+    (($i:expr, $idx:expr), $offset:expr, $submac:ident!( $($args:tt)* )) => (
+        match $i.len() < $offset {
+            false => {
+                match $submac!(($i,$offset), $($args)*) {
+                    Ok((r,_)) => Ok((r,($idx))),
+                    Err(e)    => Err(e),
+                }
+            },
+            true  => Err(GenError::BufferTooSmall($offset)),
+        }
+    );
+);
+
+#[macro_export]
+macro_rules! gen_at_rel_offset(
+    (($i:expr, $idx:expr), $rel_offset:expr, $f:ident( $($args:tt)* )) => (
+        match ($rel_offset as i32).overflowing_add($idx).1 {
+            (s,false) if s > 0 => { gen_at_offset!(($i,$idx),s as usize,$f($($args)*)) },
+            _                  => Err(GenError::InvalidOffset),
+        }
+    );
+    (($i:expr, $idx:expr), $rel_offset:expr, $submac:ident!( $($args:tt)* )) => (
+        match ($rel_offset as i32).overflowing_add($idx) {
+            (s,false) if s > 0 => { gen_at_offset!(($i,$idx),s as usize,$submac!($($args)*)) },
+            _                  => Err(GenError::InvalidOffset),
+        }
+    );
+);
 
 /// Write the length taken from (start) to (current position) at
 /// (offset)
@@ -462,5 +511,75 @@ mod tests {
             },
             Err(e) => panic!("error {:?}",e),
         }
+    }
+
+    #[test]
+    fn test_gen_checkpoint() {
+        let mut mem : [u8; 8] = [0; 8];
+        let s = &mut mem[..];
+        let expected = [1, 0, 0, 0, 0, 4, 0, 0];
+        let r = do_gen!(
+            (s,0),
+            start: gen_be_u8!(1) >>
+                   gen_align!(4) >>
+            end:   gen_be_u16!(end-start)
+        );
+        match r {
+            Ok((b,idx)) => {
+                assert_eq!(idx,6);
+                assert_eq!(b,&expected);
+            },
+            Err(e) => panic!("error {:?}",e),
+        }
+    }
+
+    #[test]
+    fn test_gen_at_offset() {
+        let mut mem : [u8; 8] = [0; 8];
+        let s = &mut mem[..];
+        let expected = [0, 0, 0, 0, 0, 4, 0, 0];
+        let r = do_gen!(
+            (s,0),
+            gen_skip!(2) >>
+            gen_at_offset!(4,gen_be_u16!(4))
+        );
+        match r {
+            Ok((b,idx)) => {
+                assert_eq!(idx,2);
+                assert_eq!(b,&expected);
+            },
+            Err(e) => panic!("error {:?}",e),
+        }
+    }
+
+    #[test]
+    fn test_gen_at_rel_offset() {
+        let mut mem : [u8; 8] = [0; 8];
+        let s = &mut mem[..];
+        let expected = [0, 0, 0, 0, 0, 0, 0, 4];
+        let r = do_gen!(
+            (s,0),
+            gen_skip!(2) >>
+            gen_at_rel_offset!(4,gen_be_u16!(4))
+        );
+        match r {
+            Ok((b,idx)) => {
+                assert_eq!(idx,2);
+                assert_eq!(b,&expected);
+            },
+            Err(e) => panic!("error {:?}",e),
+        }
+    }
+
+    #[test]
+    fn test_gen_at_rel_offset_fail() {
+        let mut mem : [u8; 8] = [0; 8];
+        let s = &mut mem[..];
+        let r = do_gen!(
+            (s,0),
+            gen_skip!(2) >>
+            gen_at_rel_offset!(-4,gen_be_u16!(4))
+        );
+        if let Err(GenError::InvalidOffset) = r { } else { panic!("unexpected result {:?}",r) };
     }
 }
