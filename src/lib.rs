@@ -1,3 +1,8 @@
+//! # Rusticata-macros
+//!
+//! Helper macros for the [rusticata](https://github.com/rusticata) project.
+
+
 #[macro_use]
 extern crate nom;
 
