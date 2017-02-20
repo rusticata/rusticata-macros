@@ -1,0 +1,12 @@
+[package]
+name = "rusticata-macros"
+version = "0.1.0"
+description = "Helper macros for Rusticata"
+license = "LGPL-2.1+"
+keywords = ["parser","nom","serialize"]
+homepage = "https://github.com/rusticata/rusticata-macros"
+repository = "https://github.com/rusticata/rusticata-macros.git"
+authors = ["Pierre Chifflier <chifflier@wzdftpd.net>"]
+
+[dependencies]
+nom = {version = "^2", features=["verbose-errors"] }
