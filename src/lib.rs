@@ -9,3 +9,7 @@ extern crate nom;
 pub use macros::*;
 #[macro_use]
 pub mod macros;
+
+pub use gen::*;
+#[macro_use]
+pub mod gen;
