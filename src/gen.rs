@@ -172,6 +172,27 @@ macro_rules! gen_copy(
     );
 );
 
+#[macro_export]
+macro_rules! gen_slice(
+    (($i:expr, $idx:expr), $val:expr) => ( gen_copy!(($i,$idx), $val, $val.len()) );
+);
+
+#[macro_export]
+macro_rules! gen_length_slice(
+    (($i:expr, $idx:expr), $lf:ident, $val:expr) => (
+        do_gen!(($i,$idx),
+            $lf($val.len()) >>
+            gen_slice!($val)
+        )
+    );
+    (($i:expr, $idx:expr), $lsubmac:ident >> $val:expr) => (
+        do_gen!(($i,$idx),
+            $lsubmac!($val.len()) >>
+            gen_slice!($val)
+        )
+    );
+);
+
 
 #[macro_export]
 macro_rules! gen_call(
@@ -507,6 +528,25 @@ mod tests {
         match r {
             Ok((b,idx)) => {
                 assert_eq!(idx,4);
+                assert_eq!(b,&expected);
+            },
+            Err(e) => panic!("error {:?}",e),
+        }
+    }
+
+    #[test]
+    fn test_gen_length_slice() {
+        let mut mem : [u8; 8] = [0; 8];
+        let s = &mut mem[..];
+        let v = [1, 2, 3, 4];
+        let expected = [0, 4, 1, 2, 3, 4, 0, 0];
+        let r = do_gen!(
+            (s,0),
+            gen_length_slice!(gen_be_u16 >> v)
+        );
+        match r {
+            Ok((b,idx)) => {
+                assert_eq!(idx,6);
                 assert_eq!(b,&expected);
             },
             Err(e) => panic!("error {:?}",e),
