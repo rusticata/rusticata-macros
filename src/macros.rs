@@ -1,3 +1,5 @@
+//! Helper macros
+
 /// Helper macro for nom parsers: raise error if the condition is false
 #[macro_export]
 macro_rules! error_if (
@@ -16,6 +18,10 @@ macro_rules! error_if (
 );
 
 
+/// Read an entire slice as a big-endian value.
+///
+/// Returns the value as `u64`. This function checks for integer overflows, and returns a
+/// `Result::Err` value if the value is too big.
 pub fn bytes_to_u64(s: &[u8]) -> Result<u64, &'static str> {
     let mut u : u64 = 0;
 
@@ -29,6 +35,7 @@ pub fn bytes_to_u64(s: &[u8]) -> Result<u64, &'static str> {
     Ok(u)
 }
 
+/// Read a slice as a big-endian value.
 #[macro_export]
 macro_rules! parse_hex_to_u64 (
     ( $i:expr, $size:expr ) => (
@@ -36,7 +43,8 @@ macro_rules! parse_hex_to_u64 (
     );
 );
 
-named!(pub parse_uint24<&[u8], u64>, parse_hex_to_u64!(3));
+named_attr!(#[doc = "Read 3 bytes as an unsigned integer"],
+            pub parse_uint24<&[u8], u64>, parse_hex_to_u64!(3));
 
 //named!(parse_hex4<&[u8], u64>, parse_hex_to_u64!(4));
 

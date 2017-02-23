@@ -1,13 +1,21 @@
+//! Generator combinator, based on [nom](https://github.com/Geal/nom)'s syntax.
+
+/// Base type for generator errors
 #[derive(Debug)]
 pub enum GenError {
+    /// Input buffer is too small. Argument is the maximum index that is required
     BufferTooSmall(usize),
+    /// Operation asked for accessing an invalid index
     InvalidOffset,
 
+    /// Allocated for custom errors
     CustomError(u32),
+    /// Generator or function not yet implemented
     NotYetImplemented,
 }
 
 
+/// Write an unsigned 1 byte integer. Equivalent to `gen_be_u8!(v)`
 #[inline]
 pub fn set_be_u8(x:(&mut [u8],usize),v:u8) -> Result<(&mut [u8],usize),GenError> {
     let (i,idx) = x;
@@ -20,6 +28,7 @@ pub fn set_be_u8(x:(&mut [u8],usize),v:u8) -> Result<(&mut [u8],usize),GenError>
     }
 }
 
+/// Write an unsigned 2 bytes integer. Equivalent to `gen_be_u16!(v)`
 #[inline]
 pub fn set_be_u16(x:(&mut [u8],usize),v:u16) -> Result<(&mut [u8],usize),GenError> {
     let (i,idx) = x;
@@ -35,6 +44,7 @@ pub fn set_be_u16(x:(&mut [u8],usize),v:u16) -> Result<(&mut [u8],usize),GenErro
     }
 }
 
+/// Write an unsigned 4 bytes integer. Equivalent to `gen_be_u32!(v)`
 #[inline]
 pub fn set_be_u32(x:(&mut [u8],usize),v:u32) -> Result<(&mut [u8],usize),GenError> {
     let (i,idx) = x;
@@ -54,6 +64,10 @@ pub fn set_be_u32(x:(&mut [u8],usize),v:u32) -> Result<(&mut [u8],usize),GenErro
     }
 }
 
+/// `gen_align!(I, u8) => I -> Result<I,E>`
+/// Align the output buffer to the next multiple of specified value.
+///
+/// Does not modify the output buffer, but increments the output index.
 #[macro_export]
 macro_rules! gen_align(
     (($i:expr, $idx:expr), $val:expr) => (
@@ -68,6 +82,10 @@ macro_rules! gen_align(
     ($i:expr, $val:expr) => ( gen_skip!(($i.0, $i.1), $val) );
 );
 
+/// `gen_skip!(I, u8) => I -> Result<I,E>`
+/// Skip the specified number of bytes.
+///
+/// Does not modify the output buffer, but increments the output index.
 #[macro_export]
 macro_rules! gen_skip(
     (($i:expr, $idx:expr), $val:expr) => (
@@ -80,6 +98,8 @@ macro_rules! gen_skip(
 );
 
 
+/// `gen_be_u8!(I, u8) => I -> Result<I,E>`
+/// Write an unsigned 1 byte integer.
 #[macro_export]
 macro_rules! gen_be_u8(
     (($i:expr, $idx:expr), $val:expr) => (
@@ -96,6 +116,8 @@ macro_rules! gen_be_u8(
     );
 );
 
+/// `gen_be_u16!(I, u8) => I -> Result<I,E>`
+/// Write an unsigned 2 bytes integer (using big-endian order).
 #[macro_export]
 macro_rules! gen_be_u16(
     (($i:expr, $idx:expr), $val:expr) => (
@@ -115,6 +137,8 @@ macro_rules! gen_be_u16(
     );
 );
 
+/// `gen_be_u24!(I, u8) => I -> Result<I,E>`
+/// Write an unsigned 3 bytes integer (using big-endian order).
 #[macro_export]
 macro_rules! gen_be_u24(
     (($i:expr, $idx:expr), $val:expr) => (
@@ -136,6 +160,8 @@ macro_rules! gen_be_u24(
     );
 );
 
+/// `gen_be_u32!(I, u8) => I -> Result<I,E>`
+/// Write an unsigned 4 bytes integer (using big-endian order).
 #[macro_export]
 macro_rules! gen_be_u32(
     (($i:expr, $idx:expr), $val:expr) => (
@@ -159,6 +185,8 @@ macro_rules! gen_be_u32(
     );
 );
 
+/// `gen_copy!(I, &[u8], u8) => I -> Result<I,E>`
+/// Writes a slice, copying only the specified number of bytes to the output buffer.
 #[macro_export]
 macro_rules! gen_copy(
     (($i:expr, $idx:expr), $val:expr, $l:expr) => (
@@ -172,6 +200,8 @@ macro_rules! gen_copy(
     );
 );
 
+/// `gen_slice!(I, &[u8]) => I -> Result<I,E>`
+/// Writes a slice, copying it entirely to the output buffer.
 #[macro_export]
 macro_rules! gen_slice(
     (($i:expr, $idx:expr), $val:expr) => ( gen_copy!(($i,$idx), $val, $val.len()) );
@@ -194,6 +224,18 @@ macro_rules! gen_length_slice(
 );
 
 
+/// Used to wrap common expressions and function as macros
+///
+/// ```rust,no_run
+/// # #[macro_use] extern crate rusticata_macros;
+/// # use rusticata_macros::*;
+/// # fn main() {
+/// // will make a generator setting an u8
+/// fn gen0(x:(&mut [u8],usize),v:u8) -> Result<(&mut [u8],usize),GenError> {
+///   gen_call!((x.0,x.1), set_be_u8, v)
+/// }
+/// # }
+/// ```
 #[macro_export]
 macro_rules! gen_call(
     (($i:expr, $idx:expr), $fun:expr) => ( $fun( ($i,$idx) ) );
@@ -201,6 +243,42 @@ macro_rules! gen_call(
 );
 
 
+/// Applies sub-generators in a sequence.
+///
+/// `do_gen!( I,
+///          I -> Result<I,E> >> I-> Result<I,E> >> ... >> I->Result<I,E>)
+///     => I -> Result<I,E>
+/// with I = (&[u8],usize) and E = GenError
+/// `
+///
+/// The input type is a tuple (slice,index). The index is incremented by each generator, to reflect
+/// the number of bytes written.
+///
+/// If the input slice is not big enough, an error `GenError::BufferTooSmall(n)` is returned, `n`
+/// being the index that was required.
+///
+/// ```rust,no_run
+/// # #[macro_use] extern crate rusticata_macros;
+/// # use rusticata_macros::*;
+///
+/// fn gen0(x:(&mut [u8],usize),v:u8,w:u8) -> Result<(&mut [u8],usize),GenError> {
+///   do_gen!((x.0,x.1), gen_be_u8!(v) >> gen_be_u8!(w))
+/// }
+///
+/// # fn main() {
+/// let mut mem : [u8; 2] = [0; 2];
+/// let s = &mut mem[..];
+/// let expected = [1, 2];
+///
+/// match gen0((s,0), 1, 2) {
+///     Ok((b,idx)) => {
+///         assert_eq!(idx,expected.len());
+///         assert_eq!(&b[..],&expected[..]);
+///     },
+///     Err(e) => panic!("error {:?}",e),
+/// }
+/// # }
+/// ```
 #[macro_export]
 macro_rules! do_gen(
     (__impl $i:expr, $idx:expr, ( $($rest:expr),* )) => (
@@ -251,6 +329,13 @@ macro_rules! do_gen(
 
 
 
+/// `gen_cond!(bool, I -> Result<I,E>) => I -> Result<I,E>`
+/// Conditional combinator
+///
+/// Wraps another generator and calls it if the
+/// condition is met. This combinator returns
+/// the return value of the child generator.
+///
 #[macro_export]
 macro_rules! gen_cond(
     (($i:expr, $idx:expr), $cond:expr, $submac:ident!( $($args:tt)* )) => (
@@ -267,6 +352,15 @@ macro_rules! gen_cond(
     );
 );
 
+/// `gen_if_else!(bool, I -> Result<I,E>, I -> Result<I,E>) => I -> Result<I,E>`
+/// Conditional combinator, with alternate generator.
+///
+/// Wraps another generator and calls it if the
+/// condition is met. This combinator returns
+/// the return value of the child generator.
+///
+/// If the condition is not satisfied, calls the alternate generator.
+///
 #[macro_export]
 macro_rules! gen_if_else(
     (($i:expr, $idx:expr), $cond:expr, $submac_if:ident!( $($args_if:tt)* ), $submac_else:ident!( $($args_else:tt)* )) => (
@@ -283,6 +377,8 @@ macro_rules! gen_if_else(
     );
 );
 
+/// `gen_many_ref!(I, Iterable<V>, Fn(I,V)) => I -> Result<I,E>`
+/// Applies the generator `$f` to every element of `$l`, passing arguments by reference.
 #[macro_export]
 macro_rules! gen_many_ref(
     (($i:expr, $idx:expr), $l:expr, $f:expr) => (
@@ -298,6 +394,8 @@ macro_rules! gen_many_ref(
     );
 );
 
+/// `gen_many!(I, Iterable<V>, Fn(I,V)) => I -> Result<I,E>`
+/// Applies the generator `$f` to every element of `$l`, passing arguments by value.
 #[macro_export]
 macro_rules! gen_many(
     (($i:expr, $idx:expr), $l:expr, $f:expr) => (
@@ -313,6 +411,14 @@ macro_rules! gen_many(
     );
 );
 
+/// `gen_at_offset!(usize, I -> Result<I,E>) => I -> Result<I,E>`
+/// Combinator to call generator at an absolute offset.
+///
+/// Wraps another generator and calls it using a different index
+/// from the current position. If this combinator succeeds, it returns
+/// the current index (instead of the one returned by the child generator).
+/// If the child generator fails, returns the error.
+///
 #[macro_export]
 macro_rules! gen_at_offset(
     (($i:expr, $idx:expr), $offset:expr, $f:ident( $($args:tt)* )) => (
@@ -339,6 +445,14 @@ macro_rules! gen_at_offset(
     );
 );
 
+/// `gen_at_offset!(usize, I -> Result<I,E>) => I -> Result<I,E>`
+/// Combinator to call generator at a relative offset.
+///
+/// Wraps another generator and calls it using a different index
+/// from the current position. If this combinator succeeds, it returns
+/// the current index (instead of the one returned by the child generator).
+/// If the child generator fails, returns the error.
+///
 #[macro_export]
 macro_rules! gen_at_rel_offset(
     (($i:expr, $idx:expr), $rel_offset:expr, $f:ident( $($args:tt)* )) => (
@@ -355,8 +469,8 @@ macro_rules! gen_at_rel_offset(
     );
 );
 
-/// Write the length taken from (start) to (current position) at
-/// (offset)
+/// Write the length taken from (`start`) to (`current position`) at
+/// (`offset`)
 /// Then, returns to current offset
 #[macro_export]
 macro_rules! gen_adjust_length_u16(
