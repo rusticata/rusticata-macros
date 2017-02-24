@@ -1,6 +1,6 @@
 [package]
 name = "rusticata-macros"
-version = "0.1.3"
+version = "0.2.0"
 description = "Helper macros for Rusticata"
 license = "LGPL-2.1+"
 keywords = ["parser","nom","serialize"]
