@@ -28,7 +28,7 @@ pub fn set_be_u8(x:(&mut [u8],usize),v:u8) -> Result<(&mut [u8],usize),GenError>
     }
 }
 
-/// Write an unsigned 2 bytes integer. Equivalent to `gen_be_u16!(v)`
+/// Write an unsigned 2 bytes integer (big-endian order). Equivalent to `gen_be_u16!(v)`
 #[inline]
 pub fn set_be_u16(x:(&mut [u8],usize),v:u16) -> Result<(&mut [u8],usize),GenError> {
     let (i,idx) = x;
@@ -44,14 +44,14 @@ pub fn set_be_u16(x:(&mut [u8],usize),v:u16) -> Result<(&mut [u8],usize),GenErro
     }
 }
 
-/// Write an unsigned 4 bytes integer. Equivalent to `gen_be_u32!(v)`
+/// Write an unsigned 4 bytes integer (big-endian order). Equivalent to `gen_be_u32!(v)`
 #[inline]
 pub fn set_be_u32(x:(&mut [u8],usize),v:u32) -> Result<(&mut [u8],usize),GenError> {
     let (i,idx) = x;
     match i.len() <= idx+3 {
         true  => Err(GenError::BufferTooSmall(idx+4)),
         false => {
-            let v1 : u8 =  (v >> 24)         as u8;
+            let v1 : u8 = ((v >> 24) & 0xff) as u8;
             let v2 : u8 = ((v >> 16) & 0xff) as u8;
             let v3 : u8 = ((v >>  8) & 0xff) as u8;
             let v4 : u8 = ((v      ) & 0xff) as u8;
@@ -60,6 +60,111 @@ pub fn set_be_u32(x:(&mut [u8],usize),v:u32) -> Result<(&mut [u8],usize),GenErro
             i[idx+2] = v3;
             i[idx+3] = v4;
             Ok((i,idx+4))
+        }
+    }
+}
+
+/// Write an unsigned 8 bytes integer (big-endian order). Equivalent to `gen_be_u64!(v)`
+#[inline]
+pub fn set_be_u64(x:(&mut [u8],usize),v:u64) -> Result<(&mut [u8],usize),GenError> {
+    let (i,idx) = x;
+    match i.len() <= idx+3 {
+        true  => Err(GenError::BufferTooSmall(idx+8)),
+        false => {
+            let v1 : u8 = ((v >> 56) & 0xff) as u8;
+            let v2 : u8 = ((v >> 48) & 0xff) as u8;
+            let v3 : u8 = ((v >> 40) & 0xff) as u8;
+            let v4 : u8 = ((v >> 32) & 0xff) as u8;
+            let v5 : u8 = ((v >> 24) & 0xff) as u8;
+            let v6 : u8 = ((v >> 16) & 0xff) as u8;
+            let v7 : u8 = ((v >>  8) & 0xff) as u8;
+            let v8 : u8 = ((v      ) & 0xff) as u8;
+            i[idx  ] = v1;
+            i[idx+1] = v2;
+            i[idx+2] = v3;
+            i[idx+3] = v4;
+            i[idx+4] = v5;
+            i[idx+5] = v6;
+            i[idx+6] = v7;
+            i[idx+7] = v8;
+            Ok((i,idx+8))
+        }
+    }
+}
+
+/// Write an unsigned 1 byte integer. Equivalent to `gen_le_u8!(v)`
+#[inline]
+pub fn set_le_u8(x:(&mut [u8],usize),v:u8) -> Result<(&mut [u8],usize),GenError> {
+    let (i,idx) = x;
+    match i.len() <= idx {
+        true  => Err(GenError::BufferTooSmall(idx+1)),
+        false => {
+            i[idx] = v;
+            Ok((i,idx+1))
+        }
+    }
+}
+
+/// Write an unsigned 2 bytes integer (little-endian order). Equivalent to `gen_le_u16!(v)`
+#[inline]
+pub fn set_le_u16(x:(&mut [u8],usize),v:u16) -> Result<(&mut [u8],usize),GenError> {
+    let (i,idx) = x;
+    match i.len() <= idx+1 {
+        true  => Err(GenError::BufferTooSmall(idx+2)),
+        false => {
+            let v1 : u8 = ((v >>  8) & 0xff) as u8;
+            let v2 : u8 = ((v      ) & 0xff) as u8;
+            i[idx  ] = v2;
+            i[idx+1] = v1;
+            Ok((i,idx+2))
+        }
+    }
+}
+
+/// Write an unsigned 4 bytes integer (little-endian order). Equivalent to `gen_le_u32!(v)`
+#[inline]
+pub fn set_le_u32(x:(&mut [u8],usize),v:u32) -> Result<(&mut [u8],usize),GenError> {
+    let (i,idx) = x;
+    match i.len() <= idx+3 {
+        true  => Err(GenError::BufferTooSmall(idx+4)),
+        false => {
+            let v1 : u8 = ((v >> 24) & 0xff) as u8;
+            let v2 : u8 = ((v >> 16) & 0xff) as u8;
+            let v3 : u8 = ((v >>  8) & 0xff) as u8;
+            let v4 : u8 = ((v      ) & 0xff) as u8;
+            i[idx  ] = v4;
+            i[idx+1] = v3;
+            i[idx+2] = v2;
+            i[idx+3] = v1;
+            Ok((i,idx+4))
+        }
+    }
+}
+
+/// Write an unsigned 8 bytes integer (little-endian order). Equivalent to `gen_le_u64!(v)`
+#[inline]
+pub fn set_le_u64(x:(&mut [u8],usize),v:u64) -> Result<(&mut [u8],usize),GenError> {
+    let (i,idx) = x;
+    match i.len() <= idx+3 {
+        true  => Err(GenError::BufferTooSmall(idx+8)),
+        false => {
+            let v1 : u8 = ((v >> 56) & 0xff) as u8;
+            let v2 : u8 = ((v >> 48) & 0xff) as u8;
+            let v3 : u8 = ((v >> 40) & 0xff) as u8;
+            let v4 : u8 = ((v >> 32) & 0xff) as u8;
+            let v5 : u8 = ((v >> 24) & 0xff) as u8;
+            let v6 : u8 = ((v >> 16) & 0xff) as u8;
+            let v7 : u8 = ((v >>  8) & 0xff) as u8;
+            let v8 : u8 = ((v      ) & 0xff) as u8;
+            i[idx  ] = v8;
+            i[idx+1] = v7;
+            i[idx+2] = v6;
+            i[idx+3] = v5;
+            i[idx+4] = v4;
+            i[idx+5] = v3;
+            i[idx+6] = v2;
+            i[idx+7] = v1;
+            Ok((i,idx+8))
         }
     }
 }
@@ -124,8 +229,9 @@ macro_rules! gen_be_u16(
         match $i.len() <= $idx + 1 {
             true  => Err(GenError::BufferTooSmall($idx+2)),
             false => {
-                let v1 : u8 = (($val >>  8) & 0xff) as u8;
-                let v2 : u8 = (($val      ) & 0xff) as u8;
+                let v = $val;
+                let v1 : u8 = ((v >>  8) & 0xff) as u8;
+                let v2 : u8 = ((v      ) & 0xff) as u8;
                 $i[$idx  ] = v1;
                 $i[$idx+1] = v2;
                 Ok(($i,($idx+2)))
@@ -145,9 +251,10 @@ macro_rules! gen_be_u24(
         match $i.len() <= $idx + 2 {
             true  => Err(GenError::BufferTooSmall($idx+3)),
             false => {
-                let v1 : u8 = (($val >> 16) & 0xff) as u8;
-                let v2 : u8 = (($val >>  8) & 0xff) as u8;
-                let v3 : u8 = (($val      ) & 0xff) as u8;
+                let v = $val;
+                let v1 : u8 = ((v >> 16) & 0xff) as u8;
+                let v2 : u8 = ((v >>  8) & 0xff) as u8;
+                let v3 : u8 = ((v      ) & 0xff) as u8;
                 $i[$idx  ] = v1;
                 $i[$idx+1] = v2;
                 $i[$idx+2] = v3;
@@ -168,10 +275,11 @@ macro_rules! gen_be_u32(
         match $i.len() <= $idx + 3 {
             true  => Err(GenError::BufferTooSmall($idx+4)),
             false => {
-                let v1 : u8 = (($val >> 24) & 0xff) as u8;
-                let v2 : u8 = (($val >> 16) & 0xff) as u8;
-                let v3 : u8 = (($val >>  8) & 0xff) as u8;
-                let v4 : u8 = (($val      ) & 0xff) as u8;
+                let v = $val;
+                let v1 : u8 = ((v >> 24) & 0xff) as u8;
+                let v2 : u8 = ((v >> 16) & 0xff) as u8;
+                let v3 : u8 = ((v >>  8) & 0xff) as u8;
+                let v4 : u8 = ((v      ) & 0xff) as u8;
                 $i[$idx  ] = v1;
                 $i[$idx+1] = v2;
                 $i[$idx+2] = v3;
@@ -182,6 +290,157 @@ macro_rules! gen_be_u32(
     );
     ($i:expr, $val:expr) => (
         gen_be_u32!(($i.0, $i.1), $val)
+    );
+);
+
+/// `gen_be_u64!(I, u8) => I -> Result<I,E>`
+/// Write an unsigned 8 bytes integer (using big-endian order).
+/// ```rust,ignore
+///  let r = gen_be_u64!((&mut mem,0),0x0102030405060708u64);
+/// ```
+#[macro_export]
+macro_rules! gen_be_u64(
+    (($i:expr, $idx:expr), $val:expr) => (
+        match $i.len() <= $idx + 3 {
+            true  => Err(GenError::BufferTooSmall($idx+8)),
+            false => {
+                let v = $val;
+                let v1 : u8 = ((v >> 56) & 0xff) as u8;
+                let v2 : u8 = ((v >> 48) & 0xff) as u8;
+                let v3 : u8 = ((v >> 40) & 0xff) as u8;
+                let v4 : u8 = ((v >> 32) & 0xff) as u8;
+                let v5 : u8 = ((v >> 24) & 0xff) as u8;
+                let v6 : u8 = ((v >> 16) & 0xff) as u8;
+                let v7 : u8 = ((v >>  8) & 0xff) as u8;
+                let v8 : u8 = ((v      ) & 0xff) as u8;
+                $i[$idx  ] = v1;
+                $i[$idx+1] = v2;
+                $i[$idx+2] = v3;
+                $i[$idx+3] = v4;
+                $i[$idx+4] = v5;
+                $i[$idx+5] = v6;
+                $i[$idx+6] = v7;
+                $i[$idx+7] = v8;
+                Ok(($i,($idx+8)))
+            }
+        }
+    );
+    ($i:expr, $val:expr) => (
+        gen_be_u64!(($i.0, $i.1), $val)
+    );
+);
+
+/// `gen_le_u8!(I, u8) => I -> Result<I,E>`
+/// Write an unsigned 1 byte integer.
+#[macro_export]
+macro_rules! gen_le_u8(
+    (($i:expr, $idx:expr), $val:expr) => ( gen_be_u8!(($i.0, $i.1), $val) );
+    ($i:expr, $val:expr) => ( gen_be_u8!(($i.0, $i.1), $val) );
+);
+
+/// `gen_le_u16!(I, u8) => I -> Result<I,E>`
+/// Write an unsigned 2 bytes integer (using little-endian order).
+#[macro_export]
+macro_rules! gen_le_u16(
+    (($i:expr, $idx:expr), $val:expr) => (
+        match $i.len() <= $idx + 1 {
+            true  => Err(GenError::BufferTooSmall($idx+2)),
+            false => {
+                let v1 : u8 = (($val >>  8) & 0xff) as u8;
+                let v2 : u8 = (($val      ) & 0xff) as u8;
+                $i[$idx  ] = v2;
+                $i[$idx+1] = v1;
+                Ok(($i,($idx+2)))
+            }
+        }
+    );
+    ($i:expr, $val:expr) => (
+        gen_le_u16!(($i.0, $i.1), $val)
+    );
+);
+
+/// `gen_le_u24!(I, u8) => I -> Result<I,E>`
+/// Write an unsigned 3 bytes integer (using little-endian order).
+#[macro_export]
+macro_rules! gen_le_u24(
+    (($i:expr, $idx:expr), $val:expr) => (
+        match $i.len() <= $idx + 2 {
+            true  => Err(GenError::BufferTooSmall($idx+3)),
+            false => {
+                let v1 : u8 = (($val >> 16) & 0xff) as u8;
+                let v2 : u8 = (($val >>  8) & 0xff) as u8;
+                let v3 : u8 = (($val      ) & 0xff) as u8;
+                $i[$idx  ] = v3;
+                $i[$idx+1] = v2;
+                $i[$idx+2] = v1;
+                Ok(($i,($idx+3)))
+            }
+        }
+    );
+    ($i:expr, $val:expr) => (
+        gen_le_u24!(($i.0, $i.1), $val)
+    );
+);
+
+/// `gen_le_u32!(I, u8) => I -> Result<I,E>`
+/// Write an unsigned 4 bytes integer (using little-endian order).
+#[macro_export]
+macro_rules! gen_le_u32(
+    (($i:expr, $idx:expr), $val:expr) => (
+        match $i.len() <= $idx + 3 {
+            true  => Err(GenError::BufferTooSmall($idx+4)),
+            false => {
+                let v1 : u8 = (($val >> 24) & 0xff) as u8;
+                let v2 : u8 = (($val >> 16) & 0xff) as u8;
+                let v3 : u8 = (($val >>  8) & 0xff) as u8;
+                let v4 : u8 = (($val      ) & 0xff) as u8;
+                $i[$idx  ] = v4;
+                $i[$idx+1] = v3;
+                $i[$idx+2] = v2;
+                $i[$idx+3] = v1;
+                Ok(($i,($idx+4)))
+            }
+        }
+    );
+    ($i:expr, $val:expr) => (
+        gen_le_u32!(($i.0, $i.1), $val)
+    );
+);
+
+/// `gen_le_u64!(I, u8) => I -> Result<I,E>`
+/// Write an unsigned 8 bytes integer (using little-endian order).
+/// ```rust,ignore
+///  let r = gen_le_u64!((&mut mem,0),0x0102030405060708u64);
+/// ```
+#[macro_export]
+macro_rules! gen_le_u64(
+    (($i:expr, $idx:expr), $val:expr) => (
+        match $i.len() <= $idx + 3 {
+            true  => Err(GenError::BufferTooSmall($idx+8)),
+            false => {
+                let v = $val;
+                let v1 : u8 = ((v >> 56) & 0xff) as u8;
+                let v2 : u8 = ((v >> 48) & 0xff) as u8;
+                let v3 : u8 = ((v >> 40) & 0xff) as u8;
+                let v4 : u8 = ((v >> 32) & 0xff) as u8;
+                let v5 : u8 = ((v >> 24) & 0xff) as u8;
+                let v6 : u8 = ((v >> 16) & 0xff) as u8;
+                let v7 : u8 = ((v >>  8) & 0xff) as u8;
+                let v8 : u8 = ((v      ) & 0xff) as u8;
+                $i[$idx  ] = v8;
+                $i[$idx+1] = v7;
+                $i[$idx+2] = v6;
+                $i[$idx+3] = v5;
+                $i[$idx+4] = v4;
+                $i[$idx+5] = v3;
+                $i[$idx+6] = v2;
+                $i[$idx+7] = v1;
+                Ok(($i,($idx+8)))
+            }
+        }
+    );
+    ($i:expr, $val:expr) => (
+        gen_le_u64!(($i.0, $i.1), $val)
     );
 );
 
@@ -591,6 +850,34 @@ mod tests {
         match r {
             Ok((b,idx)) => {
                 assert_eq!(idx,2);
+                assert_eq!(b,&expected);
+            },
+            Err(e) => panic!("error {:?}",e),
+        }
+    }
+
+    #[test]
+    fn test_gen_be_u64() {
+        let mut mem : [u8; 8] = [0; 8];
+        let expected = [1, 2, 3, 4, 5, 6, 7, 8];
+        let r = gen_be_u64!((&mut mem,0),0x0102030405060708u64);
+        match r {
+            Ok((b,idx)) => {
+                assert_eq!(idx,8);
+                assert_eq!(b,&expected);
+            },
+            Err(e) => panic!("error {:?}",e),
+        }
+    }
+
+    #[test]
+    fn test_gen_le_u64() {
+        let mut mem : [u8; 8] = [0; 8];
+        let expected = [8, 7, 6, 5, 4, 3, 2, 1];
+        let r = gen_le_u64!((&mut mem,0),0x0102030405060708u64);
+        match r {
+            Ok((b,idx)) => {
+                assert_eq!(idx,8);
                 assert_eq!(b,&expected);
             },
             Err(e) => panic!("error {:?}",e),
