@@ -517,6 +517,26 @@ mod tests {
     }
 
     #[test]
+    fn test_do_gen_vector() {
+        let mut data = vec![0; 8];
+        let expected = [1, 2, 3, 4, 5, 6, 7, 8];
+        let r = do_gen!(
+            (&mut data,0),
+            gen_be_u8!(1) >>
+            gen_be_u8!(2) >>
+            gen_be_u16!(0x0304) >>
+            gen_be_u32!(0x05060708)
+        );
+        match r {
+            Ok((b,idx)) => {
+                assert_eq!(idx,8);
+                assert_eq!(b,&expected);
+            },
+            Err(e) => panic!("error {:?}",e),
+        }
+    }
+
+    #[test]
     fn test_gen_skip() {
         let mut mem : [u8; 8] = [0; 8];
         let s = &mut mem[..];
