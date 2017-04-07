@@ -25,6 +25,7 @@ macro_rules! error_if (
 pub fn bytes_to_u64(s: &[u8]) -> Result<u64, &'static str> {
     let mut u : u64 = 0;
 
+    if s.len() == 0 { return Err("empty"); };
     for &c in s {
         let (u1,f1) = u.overflowing_mul(256);
         let (u2,f2) = u1.overflowing_add(c as u64);
