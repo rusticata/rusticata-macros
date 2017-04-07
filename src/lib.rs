@@ -12,3 +12,5 @@ extern crate nom;
 pub use macros::*;
 #[macro_use]
 pub mod macros;
+
+pub mod debug;
