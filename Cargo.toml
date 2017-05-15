@@ -1,6 +1,6 @@
 [package]
 name = "rusticata-macros"
-version = "0.3.1"
+version = "0.3.2"
 description = "Helper macros for Rusticata"
 license = "LGPL-2.1+"
 keywords = ["parser","nom","serialize"]
@@ -9,4 +9,4 @@ repository = "https://github.com/rusticata/rusticata-macros.git"
 authors = ["Pierre Chifflier <chifflier@wzdftpd.net>"]
 
 [dependencies]
-nom = {version = "^2", features=["verbose-errors"] }
+nom = {version = "^3", features=["verbose-errors"] }
