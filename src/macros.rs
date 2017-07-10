@@ -49,3 +49,60 @@ named_attr!(#[doc = "Read 3 bytes as an unsigned integer"],
 
 //named!(parse_hex4<&[u8], u64>, parse_hex_to_u64!(4));
 
+
+/// Parse a slice and return a fixed-sized array of bytes
+///
+/// This creates a copy of input data
+/// Uses unsafe code
+#[macro_export]
+macro_rules! slice_fixed(
+    ( $i:expr, $count:expr ) => (
+        {
+            let cnt = $count;
+            let ires: IResult<_,_> = if $i.len() < cnt {
+                IResult::Incomplete(Needed::Size(cnt))
+            } else {
+                let mut res: [u8; $count] = unsafe{[::std::mem::uninitialized(); $count as usize]};
+                unsafe{::std::ptr::copy($i.as_ptr(), res.as_mut_ptr(), cnt)};
+                IResult::Done(&$i[cnt..],res)
+            };
+            ires
+        }
+    );
+);
+
+
+
+#[cfg(test)]
+mod tests{
+
+    use nom::{be_u8,IResult,Needed};
+
+#[test]
+#[allow(unsafe_code)]
+fn test_slice_fixed() {
+    let empty = &b""[..];
+    let b = &[0x01, 0x02, 0x03, 0x04, 0x05];
+
+    let res = slice_fixed!(b, 4);
+    assert_eq!(res, IResult::Done(&b[4..], [1, 2, 3, 4]));
+
+    // can we still use the result ?
+    match res {
+        IResult::Done(rem, _) => {
+            let res2 = be_u8(rem);
+            assert_eq!(res2, IResult::Done(empty,5));
+        },
+        _ => (),
+    }
+}
+
+#[test]
+#[allow(unsafe_code)]
+fn test_slice_fixed_incomplete() {
+    let b = &[0x01, 0x02, 0x03, 0x04, 0x05];
+    let res = slice_fixed!(b, 8);
+    assert_eq!(res, IResult::Incomplete(Needed::Size(8)));
+}
+
+}
