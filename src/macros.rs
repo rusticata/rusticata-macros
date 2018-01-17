@@ -6,17 +6,17 @@ macro_rules! error_if (
   ($i:expr, $cond:expr, $err:expr) => (
     {
       if $cond {
-        IResult::Error($err)
+        IResult::Error(error_position!($err,$i))
+        // for nom4:
+        // Err(Err::Error(error_position!($i, $err)))
       } else {
         IResult::Done($i, ())
+        // for nom4:
+        // Ok(($i, ()))
       }
     }
   );
-  ($i:expr, $cond:expr, $err:expr) => (
-    error!($i, $cond, $err);
-  );
 );
-
 
 /// Read an entire slice as a big-endian value.
 ///
@@ -76,7 +76,7 @@ macro_rules! slice_fixed(
 #[cfg(test)]
 mod tests{
 
-    use nom::{be_u8,IResult,Needed};
+    use nom::{be_u8,IResult,Needed,ErrorKind};
 
 #[test]
 #[allow(unsafe_code)]
@@ -103,6 +103,15 @@ fn test_slice_fixed_incomplete() {
     let b = &[0x01, 0x02, 0x03, 0x04, 0x05];
     let res = slice_fixed!(b, 8);
     assert_eq!(res, IResult::Incomplete(Needed::Size(8)));
+}
+
+#[test]
+fn test_error_if() {
+    let empty = &b""[..];
+    let res : IResult<&[u8],(),u32> = error_if!(empty, true, ErrorKind::Tag);
+    assert_eq!(res, IResult::Error(ErrorKind::Tag))
+    // for nom4:
+    // assert_eq!(res, Err(Err::Error(error_position!(empty, ErrorKind::Tag))))
 }
 
 }
