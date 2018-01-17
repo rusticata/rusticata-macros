@@ -2,7 +2,7 @@
 name = "rusticata-macros"
 version = "0.3.3"
 description = "Helper macros for Rusticata"
-license = "LGPL-2.1+"
+license = "MIT/Apache-2.0"
 keywords = ["parser","nom","serialize"]
 homepage = "https://github.com/rusticata/rusticata-macros"
 repository = "https://github.com/rusticata/rusticata-macros.git"
