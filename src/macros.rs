@@ -1,5 +1,8 @@
 //! Helper macros
 
+use nom::{IResult,rest};
+use nom::HexDisplay;
+
 /// Helper macro for nom parsers: raise error if the condition is false
 #[macro_export]
 macro_rules! error_if (
@@ -17,6 +20,26 @@ macro_rules! error_if (
     }
   );
 );
+
+/// Helper macro for nom parsers: run first parser if condition is true, else second parser
+#[macro_export]
+macro_rules! cond_else (
+  ($i:expr, $cond:expr, $expr_then:expr, $expr_else:expr) => (
+    {
+      if $cond { $expr_then }
+      else { $expr_else }
+    }
+  );
+);
+
+/// Dump the remaining bytes to stderr, formatted as hex
+pub fn dbg_dmp_rest(i:&[u8]) -> IResult<&[u8],()> {
+    map!(
+        i,
+        peek!(rest),
+        |r| eprintln!("\n{}\n", r.to_hex(16))
+    )
+}
 
 /// Read an entire slice as a big-endian value.
 ///
