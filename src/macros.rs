@@ -9,13 +9,25 @@ macro_rules! error_if (
   ($i:expr, $cond:expr, $err:expr) => (
     {
       if $cond {
-        IResult::Error(error_position!($err,$i))
-        // for nom4:
-        // Err(Err::Error(error_position!($i, $err)))
+        Err(::nom::Err::Error(error_position!($i, $err)))
       } else {
-        IResult::Done($i, ())
-        // for nom4:
-        // Ok(($i, ()))
+        Ok(($i, ()))
+      }
+    }
+  );
+);
+
+/// Helper macro for nom parsers: raise error if input is not empty
+#[macro_export]
+macro_rules! empty (
+  ($i:expr,) => (
+    {
+      use nom::{Err,ErrorKind};
+
+      if ($i).len() == 0 {
+        Ok(($i, $i))
+      } else {
+        Err(Err::Error(error_position!($i, ErrorKind::Eof::<u32>)))
       }
     }
   );
@@ -24,11 +36,20 @@ macro_rules! error_if (
 /// Helper macro for nom parsers: run first parser if condition is true, else second parser
 #[macro_export]
 macro_rules! cond_else (
-  ($i:expr, $cond:expr, $expr_then:expr, $expr_else:expr) => (
+  ($i:expr, $cond:expr, $expr_then:ident!($($args_then:tt)*), $expr_else:ident!($($args_else:tt)*)) => (
     {
-      if $cond { $expr_then }
-      else { $expr_else }
+      if $cond { $expr_then!($i, $($args_then)*) }
+      else { $expr_else!($i, $($args_else)*) }
     }
+  );
+  ($i:expr, $cond:expr, $expr_then:expr, $expr_else:ident!($($args_else:tt)*)) => (
+      cond_else!($i, $cond, call!($expr_then), $expr_else!($($args_else)*))
+  );
+  ($i:expr, $cond:expr, $expr_then:ident!($($args_then:tt)*), $expr_else:expr) => (
+      cond_else!($i, $cond, $expr_then!($($args_then)*), call!($expr_else))
+  );
+  ($i:expr, $cond:expr, $expr_then:expr, $expr_else:expr) => (
+      cond_else!($i, $cond, call!($expr_then), call!($expr_else))
   );
 );
 
@@ -82,11 +103,11 @@ macro_rules! slice_fixed(
         {
             let cnt = $count;
             let ires: IResult<_,_> = if $i.len() < cnt {
-                IResult::Incomplete(Needed::Size(cnt))
+                Err(::nom::Err::Incomplete(Needed::Size(cnt)))
             } else {
                 let mut res: [u8; $count] = unsafe{[::std::mem::uninitialized(); $count as usize]};
                 unsafe{::std::ptr::copy($i.as_ptr(), res.as_mut_ptr(), cnt)};
-                IResult::Done(&$i[cnt..],res)
+                Ok((&$i[cnt..],res))
             };
             ires
         }
@@ -98,7 +119,7 @@ macro_rules! slice_fixed(
 #[cfg(test)]
 mod tests{
 
-    use nom::{be_u8,IResult,Needed,ErrorKind};
+    use nom::{be_u8,IResult,Needed,Err,ErrorKind};
 
 #[test]
 #[allow(unsafe_code)]
@@ -107,13 +128,13 @@ fn test_slice_fixed() {
     let b = &[0x01, 0x02, 0x03, 0x04, 0x05];
 
     let res = slice_fixed!(b, 4);
-    assert_eq!(res, IResult::Done(&b[4..], [1, 2, 3, 4]));
+    assert_eq!(res, Ok((&b[4..], [1, 2, 3, 4])));
 
     // can we still use the result ?
     match res {
-        IResult::Done(rem, _) => {
+        Ok((rem, _)) => {
             let res2 = be_u8(rem);
-            assert_eq!(res2, IResult::Done(empty,5));
+            assert_eq!(res2, Ok((empty,5)));
         },
         _ => (),
     }
@@ -124,16 +145,34 @@ fn test_slice_fixed() {
 fn test_slice_fixed_incomplete() {
     let b = &[0x01, 0x02, 0x03, 0x04, 0x05];
     let res = slice_fixed!(b, 8);
-    assert_eq!(res, IResult::Incomplete(Needed::Size(8)));
+    assert_eq!(res, Err(Err::Incomplete(Needed::Size(8))));
 }
 
 #[test]
 fn test_error_if() {
     let empty = &b""[..];
     let res : IResult<&[u8],(),u32> = error_if!(empty, true, ErrorKind::Tag);
-    assert_eq!(res, IResult::Error(ErrorKind::Tag))
-    // for nom4:
-    // assert_eq!(res, Err(Err::Error(error_position!(empty, ErrorKind::Tag))))
+    assert_eq!(res, Err(Err::Error(error_position!(empty, ErrorKind::Tag))));
+}
+
+#[test]
+fn test_empty() {
+    let input = &[0x01][..];
+    assert_eq!(empty!(input,), Err(Err::Error(error_position!(input, ErrorKind::Eof))));
+    let empty = &b""[..];
+    assert_eq!(empty!(empty,), Ok((empty,empty)));
+}
+
+#[test]
+fn test_cond_else() {
+    let input = &[0x01][..];
+    let empty = &b""[..];
+    let a = 1;
+    assert_eq!(cond_else!(input,a == 1,call!(be_u8),value!(0x02)), Ok((empty,0x01)));
+    assert_eq!(cond_else!(input,a == 1,be_u8,value!(0x02)), Ok((empty,0x01)));
+    assert_eq!(cond_else!(input,a == 2,be_u8,value!(0x02)), Ok((input,0x02)));
+    assert_eq!(cond_else!(input,a == 1,value!(0x02),be_u8), Ok((input,0x02)));
+    assert_eq!(cond_else!(input,a == 1,be_u8,be_u8), Ok((empty,0x01)));
 }
 
 }
