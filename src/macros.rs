@@ -87,7 +87,8 @@ macro_rules! parse_hex_to_u64 (
     );
 );
 
-named_attr!(#[doc = "Read 3 bytes as an unsigned integer"],
+named_attr!(#[doc = "Read 3 bytes as an unsigned integer"]
+#[deprecated(since="0.5.0", note="please use `be_u24` instead")],
             pub parse_uint24<&[u8], u64>, parse_hex_to_u64!(3));
 
 //named!(parse_hex4<&[u8], u64>, parse_hex_to_u64!(4));
