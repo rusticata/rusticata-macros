@@ -31,6 +31,14 @@ Crate is documented, do running `cargo doc` will crate the offline documentation
 
 Reference documentation can be found [here](https://docs.rs/rusticata-macros/)
 
+## Changes
+
+### 1.0.0
+
+- Upgrade to nom 4.0
+  - Warning: this is a breaking change!
+- Mark `parse_uint24` as deprecated
+
 ## License
 
 Licensed under either of
