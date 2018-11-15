@@ -3,6 +3,51 @@
 use nom::{IResult,rest};
 use nom::HexDisplay;
 
+/// Helper macro for newtypes: declare associated constants and implement Display trait
+#[macro_export]
+macro_rules! newtype_enum (
+    (@collect_impl, $name:ident, $($key:ident = $val:expr),* $(,)*) => {
+        $( pub const $key : $name = $name($val); )*
+    };
+
+    (@collect_disp, $name:ident, $f:ident, $m:expr, $($key:ident = $val:expr),* $(,)*) => {
+        match $m {
+            $( $val => write!($f, stringify!{$key}), )*
+            n => write!($f, "{}({} / 0x{:x})", stringify!{$name}, n, n)
+        }
+    };
+
+    // entry
+    (impl $name:ident {$($body:tt)*}) => (
+        #[allow(non_upper_case_globals)]
+        impl $name {
+            newtype_enum!{@collect_impl, $name, $($body)*}
+        }
+    );
+
+    // entry with display
+    (impl display $name:ident {$($body:tt)*}) => (
+        newtype_enum!(impl $name { $($body)* });
+
+        impl ::std::fmt::Display for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                newtype_enum!(@collect_disp, $name, f, self.0, $($body)*)
+            }
+        }
+    );
+
+    // entry with display and debug
+    (impl debug $name:ident {$($body:tt)*}) => (
+        newtype_enum!(impl display $name { $($body)* });
+
+        impl ::std::fmt::Debug for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(f, "{}", self)
+            }
+        }
+    );
+);
+
 /// Helper macro for nom parsers: raise error if the condition is false
 #[macro_export]
 macro_rules! error_if (
@@ -174,6 +219,31 @@ fn test_cond_else() {
     assert_eq!(cond_else!(input,a == 2,be_u8,value!(0x02)), Ok((input,0x02)));
     assert_eq!(cond_else!(input,a == 1,value!(0x02),be_u8), Ok((input,0x02)));
     assert_eq!(cond_else!(input,a == 1,be_u8,be_u8), Ok((empty,0x01)));
+}
+
+#[test]
+fn test_newtype_enum() {
+    #[derive(Debug, PartialEq, Eq)]
+    struct MyType(pub u8);
+
+    newtype_enum!{
+        impl display MyType {
+            Val1 = 0,
+            Val2 = 1
+        }
+    }
+
+    assert_eq!(MyType(0), MyType::Val1);
+    assert_eq!(MyType(1), MyType::Val2);
+
+    assert_eq!(
+        format!("{}", MyType(0)),
+        "Val1"
+    );
+    assert_eq!(
+        format!("{}", MyType(4)),
+        "MyType(4 / 0x4)"
+    );
 }
 
 }
