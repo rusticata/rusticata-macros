@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-/// Wrapper for printing valut as u8 hex data
+/// Wrapper for printing value as u8 hex data
 pub struct HexU8(pub u8);
 
 impl fmt::Debug for HexU8 {
