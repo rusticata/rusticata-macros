@@ -7,7 +7,6 @@ extern crate rusticata_macros;
 
 use rusticata_macros::bytes_to_u64;
 
-
 #[bench]
 fn bench_bytes_to_u64(b: &mut Bencher) {
     let bytes = &[0x12, 0x34, 0x56, 0x78, 0x90, 0x12];

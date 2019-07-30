@@ -1,8 +1,8 @@
 //! Helper macros
 
-use nom::IResult;
 use nom::combinator::rest;
 use nom::HexDisplay;
+use nom::IResult;
 
 /// Helper macro for newtypes: declare associated constants and implement Display trait
 #[macro_export]
@@ -99,12 +99,8 @@ macro_rules! cond_else (
 );
 
 /// Dump the remaining bytes to stderr, formatted as hex
-pub fn dbg_dmp_rest(i:&[u8]) -> IResult<&[u8],()> {
-    map!(
-        i,
-        peek!(call!(rest)),
-        |r| eprintln!("\n{}\n", r.to_hex(16))
-    )
+pub fn dbg_dmp_rest(i: &[u8]) -> IResult<&[u8], ()> {
+    map!(i, peek!(call!(rest)), |r| eprintln!("\n{}\n", r.to_hex(16)))
 }
 
 /// Read an entire slice as a big-endian value.
@@ -112,10 +108,14 @@ pub fn dbg_dmp_rest(i:&[u8]) -> IResult<&[u8],()> {
 /// Returns the value as `u64`. This function checks for integer overflows, and returns a
 /// `Result::Err` value if the value is too big.
 pub fn bytes_to_u64(s: &[u8]) -> Result<u64, &'static str> {
-    let mut u : u64 = 0;
+    let mut u: u64 = 0;
 
-    if s.len() == 0 { return Err("empty"); };
-    if s.len() > 8 { return Err("overflow"); }
+    if s.len() == 0 {
+        return Err("empty");
+    };
+    if s.len() > 8 {
+        return Err("overflow");
+    }
     for &c in s {
         let u1 = u << 8;
         u = u1 | (c as u64);
@@ -138,7 +138,6 @@ named_attr!(#[doc = "Read 3 bytes as an unsigned integer"]
 
 //named!(parse_hex4<&[u8], u64>, parse_hex_to_u64!(4));
 
-
 /// Parse a slice and return a fixed-sized array of bytes
 ///
 /// This creates a copy of input data
@@ -160,94 +159,98 @@ macro_rules! slice_fixed(
     );
 );
 
-
-
 #[cfg(test)]
-mod tests{
-    use nom::{IResult, Needed, Err};
+mod tests {
     use nom::error::ErrorKind;
     use nom::number::streaming::be_u8;
+    use nom::{Err, IResult, Needed};
 
-#[test]
-#[allow(unsafe_code)]
-fn test_slice_fixed() {
-    let empty = &b""[..];
-    let b = &[0x01, 0x02, 0x03, 0x04, 0x05];
+    #[test]
+    #[allow(unsafe_code)]
+    fn test_slice_fixed() {
+        let empty = &b""[..];
+        let b = &[0x01, 0x02, 0x03, 0x04, 0x05];
 
-    let res = slice_fixed!(b, 4);
-    assert_eq!(res, Ok((&b[4..], [1, 2, 3, 4])));
+        let res = slice_fixed!(b, 4);
+        assert_eq!(res, Ok((&b[4..], [1, 2, 3, 4])));
 
-    // can we still use the result ?
-    match res {
-        Ok((rem, _)) => {
-            let res2 : IResult<&[u8],u8> = be_u8(rem);
-            assert_eq!(res2, Ok((empty,5)));
-        },
-        _ => (),
-    }
-}
-
-#[test]
-#[allow(unsafe_code)]
-fn test_slice_fixed_incomplete() {
-    let b = &[0x01, 0x02, 0x03, 0x04, 0x05];
-    let res = slice_fixed!(b, 8);
-    assert_eq!(res, Err(Err::Incomplete(Needed::Size(8))));
-}
-
-#[test]
-fn test_error_if() {
-    let empty = &b""[..];
-    let res : IResult<&[u8],()> = error_if!(empty, true, ErrorKind::Tag);
-    assert_eq!(res, Err(Err::Error(error_position!(empty, ErrorKind::Tag))));
-}
-
-#[test]
-fn test_empty() {
-    let input = &[0x01][..];
-    let res : IResult<&[u8],&[u8]> = empty!(input,);
-    assert_eq!(res, Err(Err::Error(error_position!(input, ErrorKind::Eof))));
-    let empty = &b""[..];
-    let res : IResult<&[u8],&[u8]> = empty!(empty,);
-    assert_eq!(res, Ok((empty,empty)));
-}
-
-#[test]
-fn test_cond_else() {
-    let input = &[0x01][..];
-    let empty = &b""[..];
-    let a = 1;
-    assert_eq!(cond_else!(input,a == 1,call!(be_u8),value!(0x02)), Ok((empty,0x01)));
-    assert_eq!(cond_else!(input,a == 1,be_u8,value!(0x02)), Ok((empty,0x01)));
-    assert_eq!(cond_else!(input,a == 2,be_u8,value!(0x02)), Ok((input,0x02)));
-    assert_eq!(cond_else!(input,a == 1,value!(0x02),be_u8), Ok((input,0x02)));
-    let res : IResult<&[u8],u8> = cond_else!(input,a == 1,be_u8,be_u8);
-    assert_eq!(res, Ok((empty,0x01)));
-}
-
-#[test]
-fn test_newtype_enum() {
-    #[derive(Debug, PartialEq, Eq)]
-    struct MyType(pub u8);
-
-    newtype_enum!{
-        impl display MyType {
-            Val1 = 0,
-            Val2 = 1
+        // can we still use the result ?
+        match res {
+            Ok((rem, _)) => {
+                let res2: IResult<&[u8], u8> = be_u8(rem);
+                assert_eq!(res2, Ok((empty, 5)));
+            }
+            _ => (),
         }
     }
 
-    assert_eq!(MyType(0), MyType::Val1);
-    assert_eq!(MyType(1), MyType::Val2);
+    #[test]
+    #[allow(unsafe_code)]
+    fn test_slice_fixed_incomplete() {
+        let b = &[0x01, 0x02, 0x03, 0x04, 0x05];
+        let res = slice_fixed!(b, 8);
+        assert_eq!(res, Err(Err::Incomplete(Needed::Size(8))));
+    }
 
-    assert_eq!(
-        format!("{}", MyType(0)),
-        "Val1"
-    );
-    assert_eq!(
-        format!("{}", MyType(4)),
-        "MyType(4 / 0x4)"
-    );
-}
+    #[test]
+    fn test_error_if() {
+        let empty = &b""[..];
+        let res: IResult<&[u8], ()> = error_if!(empty, true, ErrorKind::Tag);
+        assert_eq!(res, Err(Err::Error(error_position!(empty, ErrorKind::Tag))));
+    }
+
+    #[test]
+    fn test_empty() {
+        let input = &[0x01][..];
+        let res: IResult<&[u8], &[u8]> = empty!(input,);
+        assert_eq!(res, Err(Err::Error(error_position!(input, ErrorKind::Eof))));
+        let empty = &b""[..];
+        let res: IResult<&[u8], &[u8]> = empty!(empty,);
+        assert_eq!(res, Ok((empty, empty)));
+    }
+
+    #[test]
+    fn test_cond_else() {
+        let input = &[0x01][..];
+        let empty = &b""[..];
+        let a = 1;
+        assert_eq!(
+            cond_else!(input, a == 1, call!(be_u8), value!(0x02)),
+            Ok((empty, 0x01))
+        );
+        assert_eq!(
+            cond_else!(input, a == 1, be_u8, value!(0x02)),
+            Ok((empty, 0x01))
+        );
+        assert_eq!(
+            cond_else!(input, a == 2, be_u8, value!(0x02)),
+            Ok((input, 0x02))
+        );
+        assert_eq!(
+            cond_else!(input, a == 1, value!(0x02), be_u8),
+            Ok((input, 0x02))
+        );
+        let res: IResult<&[u8], u8> = cond_else!(input, a == 1, be_u8, be_u8);
+        assert_eq!(res, Ok((empty, 0x01)));
+    }
+
+    #[test]
+    fn test_newtype_enum() {
+        #[derive(Debug, PartialEq, Eq)]
+        struct MyType(pub u8);
+
+        newtype_enum! {
+            impl display MyType {
+                Val1 = 0,
+                Val2 = 1
+            }
+        }
+
+        assert_eq!(MyType(0), MyType::Val1);
+        assert_eq!(MyType(1), MyType::Val2);
+
+        assert_eq!(format!("{}", MyType(0)), "Val1");
+        assert_eq!(format!("{}", MyType(4)), "MyType(4 / 0x4)");
+    }
 
 }
