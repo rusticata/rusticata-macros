@@ -5,9 +5,11 @@
 [![Build Status](https://travis-ci.org/rusticata/rusticata-macros.svg?branch=master)](https://travis-ci.org/rusticata/rusticata-macros)
 [![Crates.io Version](https://img.shields.io/crates/v/rusticata-macros.svg)](https://crates.io/crates/rusticata-macros)
 
-## Overview
+<!-- cargo-sync-readme start -->
 
-Helper macros for Rusticata
+# Rusticata-macros
+
+Helper macros for the [rusticata](https://github.com/rusticata) project.
 
 This crate contains some additions to [nom](https://github.com/Geal/nom).
 
@@ -15,15 +17,19 @@ For example, the `error_if!` macro allows to test a condition and return an erro
 fails:
 
 ```rust
-let r = do_parse!(
-	s,
-	l: be_u8 >>
-	error_if!(l < 0, ErrorKind::Custom(128)) >>
-	data: take!(l - 4) >>
-	);
+use rusticata_macros::error_if;
+let r : IResult<&[u8],()> = do_parse!(
+    s,
+    l: be_u8 >>
+    error_if!(l < 4, ErrorKind::Verify) >>
+    data: take!(l - 4) >>
+    (())
+    );
 ```
 
 See the documentation for more details and examples.
+
+<!-- cargo-sync-readme end -->
 
 ## Documentation
 

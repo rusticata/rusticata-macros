@@ -54,6 +54,7 @@ macro_rules! newtype_enum (
 macro_rules! error_if (
   ($i:expr, $cond:expr, $err:expr) => (
     {
+      use nom::error_position;
       if $cond {
         Err(::nom::Err::Error(error_position!($i, $err)))
       } else {
