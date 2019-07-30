@@ -1,6 +1,7 @@
 //! Helper macros
 
-use nom::{IResult,rest};
+use nom::IResult;
+use nom::combinator::rest;
 use nom::HexDisplay;
 
 /// Helper macro for newtypes: declare associated constants and implement Display trait
@@ -63,17 +64,15 @@ macro_rules! error_if (
 );
 
 /// Helper macro for nom parsers: raise error if input is not empty
+///
+/// Deprecated - use `nom::eof`
 #[macro_export]
+#[deprecated(since = "2.0.0")]
 macro_rules! empty (
   ($i:expr,) => (
     {
-      use nom::{Err,ErrorKind};
-
-      if ($i).len() == 0 {
-        Ok(($i, $i))
-      } else {
-        Err(Err::Error(error_position!($i, ErrorKind::Eof::<u32>)))
-      }
+      use nom::eof;
+      eof!($i,)
     }
   );
 );
@@ -102,7 +101,7 @@ macro_rules! cond_else (
 pub fn dbg_dmp_rest(i:&[u8]) -> IResult<&[u8],()> {
     map!(
         i,
-        peek!(rest),
+        peek!(call!(rest)),
         |r| eprintln!("\n{}\n", r.to_hex(16))
     )
 }
@@ -164,8 +163,9 @@ macro_rules! slice_fixed(
 
 #[cfg(test)]
 mod tests{
-
-    use nom::{be_u8,IResult,Needed,Err,ErrorKind};
+    use nom::{IResult, Needed, Err};
+    use nom::error::ErrorKind;
+    use nom::number::streaming::be_u8;
 
 #[test]
 #[allow(unsafe_code)]
@@ -179,7 +179,7 @@ fn test_slice_fixed() {
     // can we still use the result ?
     match res {
         Ok((rem, _)) => {
-            let res2 = be_u8(rem);
+            let res2 : IResult<&[u8],u8> = be_u8(rem);
             assert_eq!(res2, Ok((empty,5)));
         },
         _ => (),
@@ -197,16 +197,18 @@ fn test_slice_fixed_incomplete() {
 #[test]
 fn test_error_if() {
     let empty = &b""[..];
-    let res : IResult<&[u8],(),u32> = error_if!(empty, true, ErrorKind::Tag);
+    let res : IResult<&[u8],()> = error_if!(empty, true, ErrorKind::Tag);
     assert_eq!(res, Err(Err::Error(error_position!(empty, ErrorKind::Tag))));
 }
 
 #[test]
 fn test_empty() {
     let input = &[0x01][..];
-    assert_eq!(empty!(input,), Err(Err::Error(error_position!(input, ErrorKind::Eof))));
+    let res : IResult<&[u8],&[u8]> = empty!(input,);
+    assert_eq!(res, Err(Err::Error(error_position!(input, ErrorKind::Eof))));
     let empty = &b""[..];
-    assert_eq!(empty!(empty,), Ok((empty,empty)));
+    let res : IResult<&[u8],&[u8]> = empty!(empty,);
+    assert_eq!(res, Ok((empty,empty)));
 }
 
 #[test]
@@ -218,7 +220,8 @@ fn test_cond_else() {
     assert_eq!(cond_else!(input,a == 1,be_u8,value!(0x02)), Ok((empty,0x01)));
     assert_eq!(cond_else!(input,a == 2,be_u8,value!(0x02)), Ok((input,0x02)));
     assert_eq!(cond_else!(input,a == 1,value!(0x02),be_u8), Ok((input,0x02)));
-    assert_eq!(cond_else!(input,a == 1,be_u8,be_u8), Ok((empty,0x01)));
+    let res : IResult<&[u8],u8> = cond_else!(input,a == 1,be_u8,be_u8);
+    assert_eq!(res, Ok((empty,0x01)));
 }
 
 #[test]

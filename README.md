@@ -33,6 +33,10 @@ Reference documentation can be found [here](https://docs.rs/rusticata-macros/)
 
 ## Changes
 
+### 2.0
+
+- Upgrade to nom 5
+
 ### 1.1.0
 
 - Add macro `newtype_enum`

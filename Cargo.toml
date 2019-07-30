@@ -9,4 +9,4 @@ repository = "https://github.com/rusticata/rusticata-macros.git"
 authors = ["Pierre Chifflier <chifflier@wzdftpd.net>"]
 
 [dependencies]
-nom = {version = "4.0"}
+nom = "5.0"
