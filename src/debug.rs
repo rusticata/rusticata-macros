@@ -32,7 +32,7 @@ impl<'a> fmt::Debug for HexSlice<'a> {
 
 #[cfg(test)]
 mod tests {
-    use debug;
+    use crate::debug;
 
     #[test]
     fn debug_print_hexu8() {
