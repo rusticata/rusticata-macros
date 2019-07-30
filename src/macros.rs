@@ -50,6 +50,24 @@ macro_rules! newtype_enum (
 );
 
 /// Helper macro for nom parsers: raise error if the condition is false
+///
+/// This macro is used when using custom errors
+#[macro_export]
+macro_rules! custom_check (
+  ($i:expr, $cond:expr, $err:expr) => (
+    {
+      if $cond {
+        Err(::nom::Err::Error($err))
+      } else {
+        Ok(($i, ()))
+      }
+    }
+  );
+);
+
+/// Helper macro for nom parsers: raise error if the condition is false
+///
+/// This macro is used when using `ErrorKind`
 #[macro_export]
 macro_rules! error_if (
   ($i:expr, $cond:expr, $err:expr) => (
@@ -159,10 +177,37 @@ macro_rules! slice_fixed(
     );
 );
 
+/// Combination and flat_map! and take! as first combinator
+#[macro_export]
+macro_rules! flat_take (
+    ($i:expr, $len:expr, $f:ident) => ({
+        if $i.len() < $len { Err(::nom::Err::Incomplete(::nom::Needed::Size($len))) }
+        else {
+            let taken = &$i[0..$len];
+            let rem = &$i[$len..];
+            match $f(taken) {
+                Ok((_,res)) => Ok((rem,res)),
+                Err(e)      => Err(e)
+            }
+        }
+    });
+    ($i:expr, $len:expr, $submac:ident!( $($args:tt)*)) => ({
+        if $i.len() < $len { Err(::nom::Err::Incomplete(::nom::Needed::Size($len))) }
+        else {
+            let taken = &$i[0..$len];
+            let rem = &$i[$len..];
+            match $submac!(taken, $($args)*) {
+                Ok((_,res)) => Ok((rem,res)),
+                Err(e)      => Err(e)
+            }
+        }
+    });
+);
+
 #[cfg(test)]
 mod tests {
     use nom::error::ErrorKind;
-    use nom::number::streaming::be_u8;
+    use nom::number::streaming::{be_u8, be_u16, be_u32};
     use nom::{Err, IResult, Needed};
 
     #[test]
@@ -252,5 +297,26 @@ mod tests {
         assert_eq!(format!("{}", MyType(0)), "Val1");
         assert_eq!(format!("{}", MyType(4)), "MyType(4 / 0x4)");
     }
-
+    #[test]
+    fn test_flat_take() {
+        let input = &[0x00, 0x01, 0xff];
+        // read first 2 bytes and use correct combinator: OK
+        let res : IResult<&[u8], u16> = flat_take!(input, 2, be_u16);
+        assert_eq!(res, Ok((&input[2..], 0x0001)));
+        // read 3 bytes and use 2: OK (some input is just lost)
+        let res : IResult<&[u8], u16> = flat_take!(input, 3, be_u16);
+        assert_eq!(res, Ok((&b""[..], 0x0001)));
+        // read 2 bytes and a combinator requiring more bytes
+        let res : IResult<&[u8], u32> = flat_take!(input, 2, be_u32);
+        assert_eq!(
+            res,
+            Err(Err::Incomplete(Needed::Size(4)))
+        );
+        // test with macro as sub-combinator
+        let res : IResult<&[u8], u16> = flat_take!(input, 2, be_u16);
+        assert_eq!(
+            res,
+            Ok((&input[2..], 0x0001))
+        );
+    }
 }

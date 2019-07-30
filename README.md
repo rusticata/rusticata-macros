@@ -39,7 +39,12 @@ Reference documentation can be found [here](https://docs.rs/rusticata-macros/)
 
 ## Changes
 
-### 2.0
+### 2.0.1
+
+- Add macro `custom_check`
+- Add macro `flat_take`
+
+### 2.0.0
 
 - Upgrade to nom 5
 - Debug types: use newtypes
