@@ -39,6 +39,10 @@ Reference documentation can be found [here](https://docs.rs/rusticata-macros/)
 
 ## Changes
 
+### 2.0.2
+
+- Add `upgrade_error` and `upgrade_error_to`
+
 ### 2.0.1
 
 - Add macro `custom_check`
