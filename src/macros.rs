@@ -247,7 +247,7 @@ macro_rules! upgrade_error_to (
 #[cfg(test)]
 mod tests {
     use nom::error::ErrorKind;
-    use nom::number::streaming::{be_u8, be_u16, be_u32};
+    use nom::number::streaming::{be_u16, be_u32, be_u8};
     use nom::{Err, IResult, Needed};
 
     #[test]
@@ -341,22 +341,16 @@ mod tests {
     fn test_flat_take() {
         let input = &[0x00, 0x01, 0xff];
         // read first 2 bytes and use correct combinator: OK
-        let res : IResult<&[u8], u16> = flat_take!(input, 2, be_u16);
+        let res: IResult<&[u8], u16> = flat_take!(input, 2, be_u16);
         assert_eq!(res, Ok((&input[2..], 0x0001)));
         // read 3 bytes and use 2: OK (some input is just lost)
-        let res : IResult<&[u8], u16> = flat_take!(input, 3, be_u16);
+        let res: IResult<&[u8], u16> = flat_take!(input, 3, be_u16);
         assert_eq!(res, Ok((&b""[..], 0x0001)));
         // read 2 bytes and a combinator requiring more bytes
-        let res : IResult<&[u8], u32> = flat_take!(input, 2, be_u32);
-        assert_eq!(
-            res,
-            Err(Err::Incomplete(Needed::Size(4)))
-        );
+        let res: IResult<&[u8], u32> = flat_take!(input, 2, be_u32);
+        assert_eq!(res, Err(Err::Incomplete(Needed::Size(4))));
         // test with macro as sub-combinator
-        let res : IResult<&[u8], u16> = flat_take!(input, 2, be_u16);
-        assert_eq!(
-            res,
-            Ok((&input[2..], 0x0001))
-        );
+        let res: IResult<&[u8], u16> = flat_take!(input, 2, be_u16);
+        assert_eq!(res, Ok((&input[2..], 0x0001)));
     }
 }
