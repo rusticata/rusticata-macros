@@ -204,6 +204,46 @@ macro_rules! flat_take (
     });
 );
 
+/// Apply combinator, trying to "upgrade" error to next error type (using the `Into` or `From`
+/// traits).
+#[macro_export]
+macro_rules! upgrade_error (
+    ($i:expr, $submac:ident!( $($args:tt)*) ) => ({
+        upgrade_error!( $submac!( $i, $($args)* ) )
+    });
+    ($i:expr, $f:expr) => ({
+        upgrade_error!( call!($i, $f) )
+    });
+    ($e:expr) => ({
+        match $e {
+            Ok(o) => Ok(o),
+            Err(::nom::Err::Error(e)) => Err(::nom::Err::Error(e.into())),
+            Err(::nom::Err::Failure(e)) => Err(::nom::Err::Failure(e.into())),
+            Err(::nom::Err::Incomplete(i)) => Err(::nom::Err::Incomplete(i)),
+        }
+    });
+);
+
+/// Apply combinator, trying to "upgrade" error to next error type (using the `Into` or `From`
+/// traits).
+#[macro_export]
+macro_rules! upgrade_error_to (
+    ($i:expr, $ty:ty, $submac:ident!( $($args:tt)*) ) => ({
+        upgrade_error_to!( $ty, $submac!( $i, $($args)* ) )
+    });
+    ($i:expr, $ty:ty, $f:expr) => ({
+        upgrade_error_to!( $ty, call!($i, $f) )
+    });
+    ($ty:ty, $e:expr) => ({
+        match $e {
+            Ok(o) => Ok(o),
+            Err(::nom::Err::Error(e)) => Err(::nom::Err::Error(e.into::<$ty>())),
+            Err(::nom::Err::Failure(e)) => Err(::nom::Err::Failure(e.into::<$ty>())),
+            Err(::nom::Err::Incomplete(i)) => Err(::nom::Err::Incomplete(i)),
+        }
+    });
+);
+
 #[cfg(test)]
 mod tests {
     use nom::error::ErrorKind;
