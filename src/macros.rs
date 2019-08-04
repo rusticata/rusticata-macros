@@ -244,6 +244,31 @@ macro_rules! upgrade_error_to (
     });
 );
 
+/// Nom combinator that returns the given expression unchanged
+#[macro_export]
+macro_rules! q {
+    ($i:expr, $x:expr) => {{
+        Ok(($i, $x))
+    }};
+}
+
+/// Align input value to the next multiple of n bytes
+/// Valid only if n is a power of 2
+#[macro_export]
+macro_rules! align_n2 {
+    ($x:expr, $n:expr) => {
+        ($x + ($n - 1)) & !($n - 1)
+    };
+}
+
+/// Align input value to the next multiple of 4 bytes
+#[macro_export]
+macro_rules! align32 {
+    ($x:expr) => {
+        $crate::align_n2!($x, 4)
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use nom::error::ErrorKind;
@@ -352,5 +377,22 @@ mod tests {
         // test with macro as sub-combinator
         let res: IResult<&[u8], u16> = flat_take!(input, 2, be_u16);
         assert_eq!(res, Ok((&input[2..], 0x0001)));
+    }
+
+    #[test]
+    fn test_q() {
+        let empty = &b""[..];
+        let res: IResult<&[u8], &str, ErrorKind> = q!(empty, "test");
+        assert_eq!(res, Ok((empty, "test")));
+    }
+
+    #[test]
+    fn test_align32() {
+        assert_eq!(align32!(3), 4);
+        assert_eq!(align32!(4), 4);
+        assert_eq!(align32!(5), 8);
+        assert_eq!(align32!(5u32), 8);
+        assert_eq!(align32!(5i32), 8);
+        assert_eq!(align32!(5usize), 8);
     }
 }
