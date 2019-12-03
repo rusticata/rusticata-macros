@@ -324,23 +324,26 @@ mod tests {
         let input = &[0x01][..];
         let empty = &b""[..];
         let a = 1;
+        fn parse_u8(i: &[u8]) -> IResult<&[u8], u8> {
+            be_u8(i)
+        }
         assert_eq!(
-            cond_else!(input, a == 1, call!(be_u8), value!(0x02)),
+            cond_else!(input, a == 1, call!(parse_u8), value!(0x02)),
             Ok((empty, 0x01))
         );
         assert_eq!(
-            cond_else!(input, a == 1, be_u8, value!(0x02)),
+            cond_else!(input, a == 1, parse_u8, value!(0x02)),
             Ok((empty, 0x01))
         );
         assert_eq!(
-            cond_else!(input, a == 2, be_u8, value!(0x02)),
+            cond_else!(input, a == 2, parse_u8, value!(0x02)),
             Ok((input, 0x02))
         );
         assert_eq!(
-            cond_else!(input, a == 1, value!(0x02), be_u8),
+            cond_else!(input, a == 1, value!(0x02), parse_u8),
             Ok((input, 0x02))
         );
-        let res: IResult<&[u8], u8> = cond_else!(input, a == 1, be_u8, be_u8);
+        let res: IResult<&[u8], u8> = cond_else!(input, a == 1, parse_u8, parse_u8);
         assert_eq!(res, Ok((empty, 0x01)));
     }
 
