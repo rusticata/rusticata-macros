@@ -168,7 +168,9 @@ macro_rules! slice_fixed(
             let ires: IResult<_,_> = if $i.len() < cnt {
                 Err(::nom::Err::Incomplete(Needed::Size(cnt)))
             } else {
-                let mut res: [u8; $count] = unsafe{[::std::mem::uninitialized(); $count as usize]};
+                let mut res: [u8; $count] = unsafe {
+                    ::std::mem::MaybeUninit::uninit().assume_init()
+                };
                 unsafe{::std::ptr::copy($i.as_ptr(), res.as_mut_ptr(), cnt)};
                 Ok((&$i[cnt..],res))
             };
