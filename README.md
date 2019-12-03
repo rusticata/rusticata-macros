@@ -39,6 +39,10 @@ Reference documentation can be found [here](https://docs.rs/rusticata-macros/)
 
 ## Changes
 
+### 2.0.4
+
+- Add function version of most combinators
+
 ### 2.0.3
 
 - Add macros `q` (quote) and `align32`
