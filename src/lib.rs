@@ -45,3 +45,5 @@ pub use macros::*;
 pub mod macros;
 
 pub mod debug;
+mod traits;
+pub use traits::*;
