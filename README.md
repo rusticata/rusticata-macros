@@ -39,6 +39,10 @@ Reference documentation can be found [here](https://docs.rs/rusticata-macros/)
 
 ## Changes
 
+### 2.1.0
+
+- Add common trait `Serialize` for structures serialization
+
 ### 2.0.4
 
 - Add function version of most combinators
