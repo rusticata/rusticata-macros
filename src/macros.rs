@@ -128,7 +128,7 @@ pub fn dbg_dmp_rest(i: &[u8]) -> IResult<&[u8], ()> {
 pub fn bytes_to_u64(s: &[u8]) -> Result<u64, &'static str> {
     let mut u: u64 = 0;
 
-    if s.len() == 0 {
+    if s.is_empty() {
         return Err("empty");
     };
     if s.len() > 8 {
@@ -309,16 +309,6 @@ mod tests {
         let empty = &b""[..];
         let res: IResult<&[u8], ()> = error_if!(empty, true, ErrorKind::Tag);
         assert_eq!(res, Err(Err::Error(error_position!(empty, ErrorKind::Tag))));
-    }
-
-    #[test]
-    fn test_empty() {
-        let input = &[0x01][..];
-        let res: IResult<&[u8], &[u8]> = empty!(input,);
-        assert_eq!(res, Err(Err::Error(error_position!(input, ErrorKind::Eof))));
-        let empty = &b""[..];
-        let res: IResult<&[u8], &[u8]> = empty!(empty,);
-        assert_eq!(res, Ok((empty, empty)));
     }
 
     #[test]
