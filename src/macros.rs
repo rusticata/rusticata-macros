@@ -49,7 +49,7 @@ macro_rules! newtype_enum (
     );
 );
 
-/// Helper macro for nom parsers: raise error if the condition is false
+/// Helper macro for nom parsers: raise error if the condition is true
 ///
 /// This macro is used when using custom errors
 #[macro_export]
@@ -65,7 +65,7 @@ macro_rules! custom_check (
   );
 );
 
-/// Helper macro for nom parsers: raise error if the condition is false
+/// Helper macro for nom parsers: raise error if the condition is true
 ///
 /// This macro is used when using `ErrorKind`
 #[macro_export]
