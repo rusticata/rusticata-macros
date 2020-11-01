@@ -166,7 +166,7 @@ macro_rules! slice_fixed(
         {
             let cnt = $count;
             let ires: IResult<_,_> = if $i.len() < cnt {
-                Err(::nom::Err::Incomplete(Needed::Size(cnt)))
+                Err(::nom::Err::Incomplete(Needed::new(cnt)))
             } else {
                 let mut res: [u8; $count] = unsafe {
                     ::std::mem::MaybeUninit::uninit().assume_init()
@@ -183,7 +183,7 @@ macro_rules! slice_fixed(
 #[macro_export]
 macro_rules! flat_take (
     ($i:expr, $len:expr, $f:ident) => ({
-        if $i.len() < $len { Err(::nom::Err::Incomplete(::nom::Needed::Size($len))) }
+        if $i.len() < $len { Err(::nom::Err::Incomplete(::nom::Needed::new($len))) }
         else {
             let taken = &$i[0..$len];
             let rem = &$i[$len..];
@@ -194,7 +194,7 @@ macro_rules! flat_take (
         }
     });
     ($i:expr, $len:expr, $submac:ident!( $($args:tt)*)) => ({
-        if $i.len() < $len { Err(::nom::Err::Incomplete(::nom::Needed::Size($len))) }
+        if $i.len() < $len { Err(::nom::Err::Incomplete(::nom::Needed::new($len))) }
         else {
             let taken = &$i[0..$len];
             let rem = &$i[$len..];
@@ -301,7 +301,7 @@ mod tests {
     fn test_slice_fixed_incomplete() {
         let b = &[0x01, 0x02, 0x03, 0x04, 0x05];
         let res = slice_fixed!(b, 8);
-        assert_eq!(res, Err(Err::Incomplete(Needed::Size(8))));
+        assert_eq!(res, Err(Err::Incomplete(Needed::new(8))));
     }
 
     #[test]
@@ -368,7 +368,7 @@ mod tests {
         assert_eq!(res, Ok((&b""[..], 0x0001)));
         // read 2 bytes and a combinator requiring more bytes
         let res: IResult<&[u8], u32> = flat_take!(input, 2, be_u32);
-        assert_eq!(res, Err(Err::Incomplete(Needed::Size(4))));
+        assert_eq!(res, Err(Err::Incomplete(Needed::new(2))));
         // test with macro as sub-combinator
         let res: IResult<&[u8], u16> = flat_take!(input, 2, be_u16);
         assert_eq!(res, Ok((&input[2..], 0x0001)));

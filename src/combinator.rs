@@ -92,7 +92,7 @@ mod tests {
         assert_eq!(res, Ok((&b""[..], 0x0001)));
         // read 2 bytes and a combinator requiring more bytes
         let res: IResult<&[u8], u32> = flat_take(2u8, be_u32)(input);
-        assert_eq!(res, Err(Err::Incomplete(Needed::Size(4))));
+        assert_eq!(res, Err(Err::Incomplete(Needed::new(2))));
     }
 
     #[test]
@@ -106,7 +106,7 @@ mod tests {
         assert_eq!(res, Ok(("def", "ab")));
         // read 2 bytes and a use combinator requiring more bytes
         let res: IResult<&str, &str> = flat_take(2u8, take(4u8))(input);
-        assert_eq!(res, Err(Err::Incomplete(Needed::Size(4))));
+        assert_eq!(res, Err(Err::Incomplete(Needed::Unknown)));
     }
 
     #[test]
