@@ -12,4 +12,4 @@ categories = ["parsing"]
 readme = "README.md"
 
 [dependencies]
-nom = "5.0"
+nom = "6.0"
