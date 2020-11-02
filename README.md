@@ -39,6 +39,10 @@ Reference documentation can be found [here](https://docs.rs/rusticata-macros/)
 
 ## Changes
 
+### 3.0.0
+
+- Upgrade to nom 6
+
 ### 2.1.0
 
 - Add common trait `Serialize` for structures serialization
