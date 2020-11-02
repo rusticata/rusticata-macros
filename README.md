@@ -32,6 +32,13 @@ See the documentation for more details and examples.
 
 <!-- cargo-sync-readme end -->
 
+## Nom versions
+
+Different versions of this crate are available, depending on nom version.
+
+- `rusticata-macros` 0.3.x depends on nom 6
+- `rusticata-macros` 0.2.x depends on nom 5
+
 ## Documentation
 
 Crate is documented, do running `cargo doc` will crate the offline documentation.
