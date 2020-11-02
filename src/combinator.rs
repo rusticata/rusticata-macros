@@ -1,9 +1,54 @@
 //! General purpose combinators
 
 use nom::bytes::streaming::take;
-use nom::error::ParseError;
-use nom::{IResult, InputLength, ToUsize};
+use nom::combinator::map_parser;
+pub use nom::error::{make_error, ErrorKind, ParseError};
+pub use nom::{IResult, Needed};
 use nom::{InputIter, InputTake};
+use nom::{InputLength, ToUsize};
+
+/// Read the entire slice as a big endian unsigned integer, up to 8 bytes
+#[inline]
+pub fn be_var_u64<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8], u64, E> {
+    if input.is_empty() {
+        return Err(nom::Err::Incomplete(Needed::new(1)));
+    }
+    if input.len() > 8 {
+        return Err(nom::Err::Error(make_error(input, ErrorKind::TooLarge)));
+    }
+    let mut res = 0u64;
+    for byte in input {
+        res = (res << 8) + *byte as u64;
+    }
+
+    Ok((&b""[..], res))
+}
+
+/// Read the entire slice as a little endian unsigned integer, up to 8 bytes
+#[inline]
+pub fn le_var_u64<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8], u64, E> {
+    if input.is_empty() {
+        return Err(nom::Err::Incomplete(Needed::new(1)));
+    }
+    if input.len() > 8 {
+        return Err(nom::Err::Error(make_error(input, ErrorKind::TooLarge)));
+    }
+    let mut res = 0u64;
+    for byte in input.iter().rev() {
+        res = (res << 8) + *byte as u64;
+    }
+
+    Ok((&b""[..], res))
+}
+
+/// Read a slice as a big-endian value.
+#[inline]
+pub fn parse_hex_to_u64<S>(i: &[u8], size: S) -> IResult<&[u8], u64>
+where
+    S: ToUsize + Copy,
+{
+    map_parser(take(size.to_usize()), be_var_u64)(i)
+}
 
 /// Create a combinator that returns the provided value, and input unchanged
 pub fn pure<I, O, E: ParseError<I>>(val: O) -> impl Fn(I) -> IResult<I, O, E>
@@ -76,10 +121,17 @@ pub const fn align32(x: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::{align32, cond_else, flat_take, pure};
+    use super::{align32, be_var_u64, cond_else, flat_take, pure};
     use nom::bytes::streaming::take;
     use nom::number::streaming::{be_u16, be_u32, be_u8};
     use nom::{Err, IResult, Needed};
+
+    #[test]
+    fn test_be_var_u64() {
+        let res: IResult<&[u8], u64> = be_var_u64(b"\x12\x34\x56");
+        let (_, v) = res.expect("be_var_u64 failed");
+        assert_eq!(v, 0x123456);
+    }
 
     #[test]
     fn test_flat_take() {

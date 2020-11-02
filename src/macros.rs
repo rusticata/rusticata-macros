@@ -1,8 +1,11 @@
 //! Helper macros
 
+use nom::bytes::complete::take;
+use nom::combinator::map_res;
 use nom::combinator::rest;
+pub use nom::error::{make_error, ErrorKind, ParseError};
 use nom::HexDisplay;
-use nom::IResult;
+pub use nom::{IResult, Needed};
 
 /// Helper macro for newtypes: declare associated constants and implement Display trait
 #[macro_export]
@@ -121,6 +124,7 @@ pub fn dbg_dmp_rest(i: &[u8]) -> IResult<&[u8], ()> {
     map!(i, peek!(call!(rest)), |r| eprintln!("\n{}\n", r.to_hex(16)))
 }
 
+#[deprecated(since = "3.0.1", note = "please use `be_var_u64` instead")]
 /// Read an entire slice as a big-endian value.
 ///
 /// Returns the value as `u64`. This function checks for integer overflows, and returns a
@@ -145,14 +149,18 @@ pub fn bytes_to_u64(s: &[u8]) -> Result<u64, &'static str> {
 /// Read a slice as a big-endian value.
 #[macro_export]
 macro_rules! parse_hex_to_u64 (
-    ( $i:expr, $size:expr ) => (
-        map_res!($i, take!(($size as usize)), $crate::bytes_to_u64)
-    );
+    ( $i:expr, $size:expr ) => {
+        map_res(take($size as usize), $crate::combinator::be_var_u64)($i)
+    };
 );
 
-named_attr!(#[doc = "Read 3 bytes as an unsigned integer"]
-#[deprecated(since="0.5.0", note="please use `be_u24` instead")],
-            pub parse_uint24<&[u8], u64>, parse_hex_to_u64!(3));
+/// Read 3 bytes as an unsigned integer
+#[deprecated(since = "0.5.0", note = "please use `be_u24` instead")]
+#[allow(deprecated)]
+#[inline]
+pub fn parse_uint24(i: &[u8]) -> IResult<&[u8], u64> {
+    map_res(take(3usize), bytes_to_u64)(i)
+}
 
 //named!(parse_hex4<&[u8], u64>, parse_hex_to_u64!(4));
 
