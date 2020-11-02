@@ -47,6 +47,10 @@ Reference documentation can be found [here](https://docs.rs/rusticata-macros/)
 
 ## Changes
 
+### 3.0.1
+
+- Add `be_var_u64` and `le_var_u64`
+
 ### 3.0.0
 
 - Upgrade to nom 6
