@@ -33,8 +33,8 @@ macro_rules! newtype_enum (
     (impl display $name:ident {$($body:tt)*}) => (
         newtype_enum!(impl $name { $($body)* });
 
-        impl ::std::fmt::Display for $name {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        impl ::core::fmt::Display for $name {
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
                 newtype_enum!(@collect_disp, $name, f, self.0, $($body)*)
             }
         }
@@ -44,8 +44,8 @@ macro_rules! newtype_enum (
     (impl debug $name:ident {$($body:tt)*}) => (
         newtype_enum!(impl display $name { $($body)* });
 
-        impl ::std::fmt::Debug for $name {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        impl ::core::fmt::Debug for $name {
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
                 write!(f, "{}", self)
             }
         }
