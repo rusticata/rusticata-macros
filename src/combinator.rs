@@ -50,6 +50,19 @@ where
     map_parser(take(size.to_usize()), be_var_u64)(i)
 }
 
+/// Apply combinator, automatically converts between errors if the underlying type supports it
+pub fn upgrade_error<I, O, E1: ParseError<I>, E2: ParseError<I>, F>(
+    mut f: F,
+) -> impl FnMut(I) -> IResult<I, O, E2>
+where
+    F: FnMut(I) -> IResult<I, O, E1>,
+    E2: From<E1>,
+{
+    move |i| {
+        f(i).map_err(nom::Err::convert)
+    }
+}
+
 /// Create a combinator that returns the provided value, and input unchanged
 pub fn pure<I, O, E: ParseError<I>>(val: O) -> impl Fn(I) -> IResult<I, O, E>
 where
