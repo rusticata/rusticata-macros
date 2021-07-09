@@ -38,6 +38,8 @@
 #[macro_use]
 extern crate nom;
 
+extern crate core;
+
 pub mod combinator;
 
 pub use macros::*;

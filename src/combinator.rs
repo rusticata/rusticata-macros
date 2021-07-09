@@ -58,9 +58,7 @@ where
     F: FnMut(I) -> IResult<I, O, E1>,
     E2: From<E1>,
 {
-    move |i| {
-        f(i).map_err(nom::Err::convert)
-    }
+    move |i| f(i).map_err(nom::Err::convert)
 }
 
 /// Create a combinator that returns the provided value, and input unchanged

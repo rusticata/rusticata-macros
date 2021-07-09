@@ -7,6 +7,11 @@ pub use nom::error::{make_error, ErrorKind, ParseError};
 use nom::HexDisplay;
 pub use nom::{IResult, Needed};
 
+#[doc(hidden)]
+pub mod export {
+    pub use core::{fmt, mem, ptr};
+}
+
 /// Helper macro for newtypes: declare associated constants and implement Display trait
 #[macro_export]
 macro_rules! newtype_enum (
@@ -33,8 +38,8 @@ macro_rules! newtype_enum (
     (impl display $name:ident {$($body:tt)*}) => (
         newtype_enum!(impl $name { $($body)* });
 
-        impl ::std::fmt::Display for $name {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        impl $crate::export::fmt::Display for $name {
+            fn fmt(&self, f: &mut $crate::export::fmt::Formatter) -> $crate::export::fmt::Result {
                 newtype_enum!(@collect_disp, $name, f, self.0, $($body)*)
             }
         }
@@ -44,8 +49,8 @@ macro_rules! newtype_enum (
     (impl debug $name:ident {$($body:tt)*}) => (
         newtype_enum!(impl display $name { $($body)* });
 
-        impl ::std::fmt::Debug for $name {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        impl $crate::export::fmt::Debug for $name {
+            fn fmt(&self, f: &mut $crate::export::fmt::Formatter) -> $crate::export::fmt::Result {
                 write!(f, "{}", self)
             }
         }
@@ -177,9 +182,9 @@ macro_rules! slice_fixed(
                 Err(::nom::Err::Incomplete(Needed::new(cnt)))
             } else {
                 let mut res: [u8; $count] = unsafe {
-                    ::std::mem::MaybeUninit::uninit().assume_init()
+                    $crate::export::mem::MaybeUninit::uninit().assume_init()
                 };
-                unsafe{::std::ptr::copy($i.as_ptr(), res.as_mut_ptr(), cnt)};
+                unsafe{$crate::export::ptr::copy($i.as_ptr(), res.as_mut_ptr(), cnt)};
                 Ok((&$i[cnt..],res))
             };
             ires
