@@ -36,8 +36,9 @@ See the documentation for more details and examples.
 
 Different versions of this crate are available, depending on nom version.
 
-- `rusticata-macros` 0.3.x depends on nom 6
-- `rusticata-macros` 0.2.x depends on nom 5
+- `rusticata-macros` 4.x depends on nom 7
+- `rusticata-macros` 3.x depends on nom 6
+- `rusticata-macros` 2.x depends on nom 5
 
 ## Documentation
 
@@ -46,6 +47,11 @@ Crate is documented, do running `cargo doc` will crate the offline documentation
 Reference documentation can be found [here](https://docs.rs/rusticata-macros/)
 
 ## Changes
+
+### 4.0.0
+
+- Upgrade to nom 7
+  - Remove macros
 
 ### 3.0.1
 

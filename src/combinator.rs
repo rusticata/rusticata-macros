@@ -3,9 +3,31 @@
 use nom::bytes::streaming::take;
 use nom::combinator::map_parser;
 pub use nom::error::{make_error, ErrorKind, ParseError};
-pub use nom::{IResult, Needed};
+pub use nom::{IResult, Needed, Parser};
 use nom::{InputIter, InputTake};
 use nom::{InputLength, ToUsize};
+
+#[deprecated(since = "3.0.1", note = "please use `be_var_u64` instead")]
+/// Read an entire slice as a big-endian value.
+///
+/// Returns the value as `u64`. This function checks for integer overflows, and returns a
+/// `Result::Err` value if the value is too big.
+pub fn bytes_to_u64(s: &[u8]) -> Result<u64, &'static str> {
+    let mut u: u64 = 0;
+
+    if s.is_empty() {
+        return Err("empty");
+    };
+    if s.len() > 8 {
+        return Err("overflow");
+    }
+    for &c in s {
+        let u1 = u << 8;
+        u = u1 | (c as u64);
+    }
+
+    Ok(u)
+}
 
 /// Read the entire slice as a big endian unsigned integer, up to 8 bytes
 #[inline]
@@ -70,29 +92,28 @@ where
 }
 
 /// Return a closure that takes `len` bytes from input, and applies `parser`.
-pub fn flat_take<I, C, O, E: ParseError<I>, F>(len: C, parser: F) -> impl Fn(I) -> IResult<I, O, E>
+pub fn flat_take<I, C, O, E: ParseError<I>, F>(
+    len: C,
+    mut parser: F,
+) -> impl FnMut(I) -> IResult<I, O, E>
 where
     I: InputTake + InputLength + InputIter,
     C: ToUsize + Copy,
-    F: Fn(I) -> IResult<I, O, E>,
+    F: Parser<I, O, E>,
 {
     // Note: this is the same as `map_parser(take(len), parser)`
     move |input: I| {
         let (input, o1) = take(len.to_usize())(input)?;
-        let (_, o2) = parser(o1)?;
+        let (_, o2) = parser.parse(o1)?;
         Ok((input, o2))
     }
 }
 
 /// Take `len` bytes from `input`, and apply `parser`.
-pub fn flat_takec<I: Clone, O, E: ParseError<I>, C, F>(
-    input: I,
-    len: C,
-    parser: F,
-) -> IResult<I, O, E>
+pub fn flat_takec<I, O, E: ParseError<I>, C, F>(input: I, len: C, parser: F) -> IResult<I, O, E>
 where
     C: ToUsize + Copy,
-    F: Fn(I) -> IResult<I, O, E>,
+    F: Parser<I, O, E>,
     I: InputTake + InputLength + InputIter,
     O: InputLength,
 {
@@ -100,21 +121,21 @@ where
 }
 
 /// Helper macro for nom parsers: run first parser if condition is true, else second parser
-pub fn cond_else<I: Clone, O, E: ParseError<I>, C, F, G>(
+pub fn cond_else<I, O, E: ParseError<I>, C, F, G>(
     cond: C,
-    first: F,
-    second: G,
-) -> impl Fn(I) -> IResult<I, O, E>
+    mut first: F,
+    mut second: G,
+) -> impl FnMut(I) -> IResult<I, O, E>
 where
     C: Fn() -> bool,
-    F: Fn(I) -> IResult<I, O, E>,
-    G: Fn(I) -> IResult<I, O, E>,
+    F: Parser<I, O, E>,
+    G: Parser<I, O, E>,
 {
     move |input: I| {
         if cond() {
-            first(input)
+            first.parse(input)
         } else {
-            second(input)
+            second.parse(input)
         }
     }
 }

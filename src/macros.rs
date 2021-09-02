@@ -2,9 +2,7 @@
 
 use nom::bytes::complete::take;
 use nom::combinator::map_res;
-use nom::combinator::rest;
 pub use nom::error::{make_error, ErrorKind, ParseError};
-use nom::HexDisplay;
 pub use nom::{IResult, Needed};
 
 #[doc(hidden)]
@@ -103,31 +101,6 @@ macro_rules! empty (
     }
   );
 );
-
-/// Helper macro for nom parsers: run first parser if condition is true, else second parser
-#[macro_export]
-macro_rules! cond_else (
-  ($i:expr, $cond:expr, $expr_then:ident!($($args_then:tt)*), $expr_else:ident!($($args_else:tt)*)) => (
-    {
-      if $cond { $expr_then!($i, $($args_then)*) }
-      else { $expr_else!($i, $($args_else)*) }
-    }
-  );
-  ($i:expr, $cond:expr, $expr_then:expr, $expr_else:ident!($($args_else:tt)*)) => (
-      cond_else!($i, $cond, call!($expr_then), $expr_else!($($args_else)*))
-  );
-  ($i:expr, $cond:expr, $expr_then:ident!($($args_then:tt)*), $expr_else:expr) => (
-      cond_else!($i, $cond, $expr_then!($($args_then)*), call!($expr_else))
-  );
-  ($i:expr, $cond:expr, $expr_then:expr, $expr_else:expr) => (
-      cond_else!($i, $cond, call!($expr_then), call!($expr_else))
-  );
-);
-
-/// Dump the remaining bytes to stderr, formatted as hex
-pub fn dbg_dmp_rest(i: &[u8]) -> IResult<&[u8], ()> {
-    map!(i, peek!(call!(rest)), |r| eprintln!("\n{}\n", r.to_hex(16)))
-}
 
 #[deprecated(since = "3.0.1", note = "please use `be_var_u64` instead")]
 /// Read an entire slice as a big-endian value.
@@ -288,7 +261,7 @@ macro_rules! align32 {
 mod tests {
     use nom::error::ErrorKind;
     use nom::number::streaming::{be_u16, be_u32, be_u8};
-    use nom::{Err, IResult, Needed};
+    use nom::{error_position, Err, IResult, Needed};
 
     #[test]
     #[allow(unsafe_code)]
@@ -322,34 +295,6 @@ mod tests {
         let empty = &b""[..];
         let res: IResult<&[u8], ()> = error_if!(empty, true, ErrorKind::Tag);
         assert_eq!(res, Err(Err::Error(error_position!(empty, ErrorKind::Tag))));
-    }
-
-    #[test]
-    fn test_cond_else() {
-        let input = &[0x01][..];
-        let empty = &b""[..];
-        let a = 1;
-        fn parse_u8(i: &[u8]) -> IResult<&[u8], u8> {
-            be_u8(i)
-        }
-        assert_eq!(
-            cond_else!(input, a == 1, call!(parse_u8), value!(0x02)),
-            Ok((empty, 0x01))
-        );
-        assert_eq!(
-            cond_else!(input, a == 1, parse_u8, value!(0x02)),
-            Ok((empty, 0x01))
-        );
-        assert_eq!(
-            cond_else!(input, a == 2, parse_u8, value!(0x02)),
-            Ok((input, 0x02))
-        );
-        assert_eq!(
-            cond_else!(input, a == 1, value!(0x02), parse_u8),
-            Ok((input, 0x02))
-        );
-        let res: IResult<&[u8], u8> = cond_else!(input, a == 1, parse_u8, parse_u8);
-        assert_eq!(res, Ok((empty, 0x01)));
     }
 
     #[test]
