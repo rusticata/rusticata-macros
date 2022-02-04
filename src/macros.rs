@@ -2,8 +2,7 @@
 
 use nom::bytes::complete::take;
 use nom::combinator::map_res;
-pub use nom::error::{make_error, ErrorKind, ParseError};
-pub use nom::{IResult, Needed};
+use nom::IResult;
 
 #[doc(hidden)]
 pub mod export {
@@ -142,29 +141,6 @@ pub fn parse_uint24(i: &[u8]) -> IResult<&[u8], u64> {
 
 //named!(parse_hex4<&[u8], u64>, parse_hex_to_u64!(4));
 
-/// Parse a slice and return a fixed-sized array of bytes
-///
-/// This creates a copy of input data
-/// Uses unsafe code
-#[macro_export]
-macro_rules! slice_fixed(
-    ( $i:expr, $count:expr ) => (
-        {
-            let cnt = $count;
-            let ires: IResult<_,_> = if $i.len() < cnt {
-                Err(::nom::Err::Incomplete(Needed::new(cnt)))
-            } else {
-                let mut res: [u8; $count] = unsafe {
-                    $crate::export::mem::MaybeUninit::uninit().assume_init()
-                };
-                unsafe{$crate::export::ptr::copy($i.as_ptr(), res.as_mut_ptr(), cnt)};
-                Ok((&$i[cnt..],res))
-            };
-            ires
-        }
-    );
-);
-
 /// Combination and flat_map! and take! as first combinator
 #[macro_export]
 macro_rules! flat_take (
@@ -260,35 +236,8 @@ macro_rules! align32 {
 #[cfg(test)]
 mod tests {
     use nom::error::ErrorKind;
-    use nom::number::streaming::{be_u16, be_u32, be_u8};
+    use nom::number::streaming::{be_u16, be_u32};
     use nom::{error_position, Err, IResult, Needed};
-
-    #[test]
-    #[allow(unsafe_code)]
-    fn test_slice_fixed() {
-        let empty = &b""[..];
-        let b = &[0x01, 0x02, 0x03, 0x04, 0x05];
-
-        let res = slice_fixed!(b, 4);
-        assert_eq!(res, Ok((&b[4..], [1, 2, 3, 4])));
-
-        // can we still use the result ?
-        match res {
-            Ok((rem, _)) => {
-                let res2: IResult<&[u8], u8> = be_u8(rem);
-                assert_eq!(res2, Ok((empty, 5)));
-            }
-            _ => (),
-        }
-    }
-
-    #[test]
-    #[allow(unsafe_code)]
-    fn test_slice_fixed_incomplete() {
-        let b = &[0x01, 0x02, 0x03, 0x04, 0x05];
-        let res = slice_fixed!(b, 8);
-        assert_eq!(res, Err(Err::Incomplete(Needed::new(8))));
-    }
 
     #[test]
     fn test_error_if() {
