@@ -4,7 +4,7 @@
 //!
 //! This crate contains some additions to [nom](https://github.com/Geal/nom).
 //!
-//! For example, the [`cond_else`] function allows to apply the first parser if the
+//! For example, the [`combinator::cond_else`] function allows to apply the first parser if the
 //! condition is true, and the second if the condition is false:
 //!
 //! ```rust
@@ -31,16 +31,14 @@
     unused_qualifications
 )]
 
-extern crate nom;
-
-extern crate core;
-
 pub mod combinator;
-
+pub mod debug;
 pub use macros::*;
 #[macro_use]
 pub mod macros;
 
-pub mod debug;
 mod traits;
 pub use traits::*;
+
+// re-exports
+pub use nom;

@@ -2,8 +2,8 @@
 
 use nom::bytes::streaming::take;
 use nom::combinator::map_parser;
-pub use nom::error::{make_error, ErrorKind, ParseError};
-pub use nom::{IResult, Needed, Parser};
+use nom::error::{make_error, ErrorKind, ParseError};
+use nom::{IResult, Needed, Parser};
 use nom::{InputIter, InputTake};
 use nom::{InputLength, ToUsize};
 
