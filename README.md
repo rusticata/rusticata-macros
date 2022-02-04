@@ -48,6 +48,10 @@ Reference documentation can be found [here](https://docs.rs/rusticata-macros/)
 
 ## Changes
 
+### 4.1.0
+
+- Remove macro `slice_fixed`
+
 ### 4.0.0
 
 - Upgrade to nom 7
