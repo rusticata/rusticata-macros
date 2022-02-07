@@ -14,18 +14,16 @@ Helper macros for the [rusticata](https://github.com/rusticata) project.
 
 This crate contains some additions to [nom](https://github.com/Geal/nom).
 
-For example, the `error_if!` macro allows to test a condition and return an error from the parser if the condition
-fails:
+For example, the [`combinator::cond_else`] function allows to apply the first parser if the
+condition is true, and the second if the condition is false:
 
 ```rust
-use rusticata_macros::error_if;
-let r : IResult<&[u8],()> = do_parse!(
-    s,
-    l: be_u8 >>
-    error_if!(l < 4, ErrorKind::Verify) >>
-    data: take!(l - 4) >>
-    (())
-    );
+use rusticata_macros::combinator::cond_else;
+let r: IResult<_, _, ()> = cond_else(
+        || s.len() > 1,
+        be_u16,
+        map(be_u8, u16::from)
+    )(s);
 ```
 
 See the documentation for more details and examples.
