@@ -31,6 +31,9 @@
     unused_qualifications
 )]
 #![cfg_attr(not(feature = "std"), no_std)]
+// only enables the `doc_cfg` feature when
+// the `docsrs` configuration attribute is defined
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 extern crate alloc;
 pub mod combinator;
