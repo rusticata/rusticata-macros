@@ -30,7 +30,9 @@
     unused_import_braces,
     unused_qualifications
 )]
+#![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
 pub mod combinator;
 pub mod debug;
 pub use macros::*;

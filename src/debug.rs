@@ -1,11 +1,15 @@
 //! Helper functions and structures for debugging purpose
 
-use nom::combinator::{map, peek, rest};
-use nom::HexDisplay;
-use nom::IResult;
-use std::fmt;
+use alloc::{format, vec::Vec};
+use core::fmt;
+#[cfg(feature = "std")]
+use nom::{
+    combinator::{map, peek, rest},
+    HexDisplay, IResult,
+};
 
 /// Dump the remaining bytes to stderr, formatted as hex
+#[cfg(feature = "std")]
 pub fn dbg_dmp_rest(i: &[u8]) -> IResult<&[u8], ()> {
     map(peek(rest), |r: &[u8]| eprintln!("\n{}\n", r.to_hex(16)))(i)
 }

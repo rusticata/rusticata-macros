@@ -12,4 +12,8 @@ categories = ["parsing"]
 readme = "README.md"
 
 [dependencies]
-nom = { version = "7.0", default-features = false, features = ["std"] }
+nom = { version = "7.0", default-features = false, features = ["alloc"] }
+
+[features]
+default = ["std"]
+std = ["nom/std"]
