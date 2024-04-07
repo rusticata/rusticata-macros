@@ -1,6 +1,6 @@
 //! Helper functions and structures for debugging purpose
 
-use alloc::{format, vec::Vec};
+use alloc::format;
 use core::fmt;
 #[cfg(feature = "std")]
 use nom::{
