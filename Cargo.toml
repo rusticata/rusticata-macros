@@ -26,3 +26,9 @@ std = ["nom/std"]
 all-features = true
 # defines the configuration attribute `docsrs`
 rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.cargo_check_external_types]
+allowed_external_types = [
+    "nom",
+    "nom::*",
+]
