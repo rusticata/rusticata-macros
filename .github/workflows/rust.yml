@@ -52,8 +52,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install stable clippy
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install nightly clippy
+        uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
       - run: cargo clippy -- -D warnings
