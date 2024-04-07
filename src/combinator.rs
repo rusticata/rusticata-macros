@@ -73,12 +73,10 @@ where
 }
 
 /// Apply combinator, automatically converts between errors if the underlying type supports it
-pub fn upgrade_error<I, O, E1: ParseError<I>, E2: ParseError<I>, F>(
-    mut f: F,
-) -> impl FnMut(I) -> IResult<I, O, E2>
+pub fn upgrade_error<I, O, E1: ParseError<I>, E2, F>(mut f: F) -> impl FnMut(I) -> IResult<I, O, E2>
 where
     F: FnMut(I) -> IResult<I, O, E1>,
-    E2: From<E1>,
+    E2: ParseError<I> + From<E1>,
 {
     move |i| f(i).map_err(nom::Err::convert)
 }
