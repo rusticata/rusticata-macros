@@ -73,30 +73,30 @@ where
 }
 
 /// Apply combinator, automatically converts between errors if the underlying type supports it
-pub fn upgrade_error<I, O, E1: ParseError<I>, E2, F>(mut f: F) -> impl FnMut(I) -> IResult<I, O, E2>
+pub fn upgrade_error<I, O, E1, E2, F>(mut f: F) -> impl FnMut(I) -> IResult<I, O, E2>
 where
     F: FnMut(I) -> IResult<I, O, E1>,
+    E1: ParseError<I>,
     E2: ParseError<I> + From<E1>,
 {
     move |i| f(i).map_err(nom::Err::convert)
 }
 
 /// Create a combinator that returns the provided value, and input unchanged
-pub fn pure<I, O, E: ParseError<I>>(val: O) -> impl Fn(I) -> IResult<I, O, E>
+pub fn pure<I, O, E>(val: O) -> impl Fn(I) -> IResult<I, O, E>
 where
     O: Clone,
+    E: ParseError<I>,
 {
     move |input: I| Ok((input, val.clone()))
 }
 
 /// Return a closure that takes `len` bytes from input, and applies `parser`.
-pub fn flat_take<I, C, O, E: ParseError<I>, F>(
-    len: C,
-    mut parser: F,
-) -> impl FnMut(I) -> IResult<I, O, E>
+pub fn flat_take<I, C, O, E, F>(len: C, mut parser: F) -> impl FnMut(I) -> IResult<I, O, E>
 where
     I: InputTake + InputLength + InputIter,
     C: ToUsize + Copy,
+    E: ParseError<I>,
     F: Parser<I, O, E>,
 {
     // Note: this is the same as `map_parser(take(len), parser)`
@@ -108,23 +108,25 @@ where
 }
 
 /// Take `len` bytes from `input`, and apply `parser`.
-pub fn flat_takec<I, O, E: ParseError<I>, C, F>(input: I, len: C, parser: F) -> IResult<I, O, E>
+pub fn flat_takec<I, O, E, C, F>(input: I, len: C, parser: F) -> IResult<I, O, E>
 where
     C: ToUsize + Copy,
     F: Parser<I, O, E>,
     I: InputTake + InputLength + InputIter,
     O: InputLength,
+    E: ParseError<I>,
 {
     flat_take(len, parser)(input)
 }
 
 /// Helper macro for nom parsers: run first parser if condition is true, else second parser
-pub fn cond_else<I, O, E: ParseError<I>, C, F, G>(
+pub fn cond_else<I, O, E, C, F, G>(
     cond: C,
     mut first: F,
     mut second: G,
 ) -> impl FnMut(I) -> IResult<I, O, E>
 where
+    E: ParseError<I>,
     C: Fn() -> bool,
     F: Parser<I, O, E>,
     G: Parser<I, O, E>,
