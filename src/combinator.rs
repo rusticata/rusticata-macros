@@ -75,9 +75,9 @@ where
 /// Apply combinator, automatically converts between errors if the underlying type supports it
 pub fn upgrade_error<I, O, E1, E2, F>(mut f: F) -> impl FnMut(I) -> IResult<I, O, E2>
 where
-    F: FnMut(I) -> IResult<I, O, E1>,
     E1: ParseError<I>,
     E2: ParseError<I> + From<E1>,
+    F: FnMut(I) -> IResult<I, O, E1>,
 {
     move |i| f(i).map_err(nom::Err::convert)
 }
@@ -110,11 +110,11 @@ where
 /// Take `len` bytes from `input`, and apply `parser`.
 pub fn flat_takec<I, O, E, C, F>(input: I, len: C, parser: F) -> IResult<I, O, E>
 where
-    C: ToUsize + Copy,
-    F: Parser<I, O, E>,
     I: InputTake + InputLength + InputIter,
     O: InputLength,
     E: ParseError<I>,
+    C: ToUsize + Copy,
+    F: Parser<I, O, E>,
 {
     flat_take(len, parser)(input)
 }
