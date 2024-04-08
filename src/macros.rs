@@ -221,11 +221,17 @@ macro_rules! q {
 #[macro_export]
 macro_rules! align_n2 {
     ($x:expr, $n:expr) => {
-        ($x + ($n - 1)) & !($n - 1)
+        ($x + $n -1) & !($n - 1)
     };
 }
 
 /// Align input value to the next multiple of 4 bytes
+///
+/// Return the next multiple of 4 bytes greater of equal than value
+///
+/// # Safety
+///
+/// `value` must be strictly less tham `<type>::MAX-2`, or this will overflow
 #[macro_export]
 macro_rules! align32 {
     ($x:expr) => {
@@ -290,11 +296,16 @@ mod tests {
 
     #[test]
     fn test_align32() {
+        assert_eq!(align32!(0), 0);
         assert_eq!(align32!(3), 4);
         assert_eq!(align32!(4), 4);
         assert_eq!(align32!(5), 8);
         assert_eq!(align32!(5u32), 8);
         assert_eq!(align32!(5i32), 8);
         assert_eq!(align32!(5usize), 8);
+
+        // check for overflows
+        // this will overflow, since usize::MAX is not aligned
+        // assert_eq!(align32!(usize::MAX - 2), usize::MAX);
     }
 }
