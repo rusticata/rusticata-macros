@@ -221,7 +221,7 @@ macro_rules! q {
 #[macro_export]
 macro_rules! align_n2 {
     ($x:expr, $n:expr) => {
-        ($x + $n -1) & !($n - 1)
+        ($x + $n - 1) & !($n - 1)
     };
 }
 
