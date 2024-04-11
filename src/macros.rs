@@ -241,6 +241,9 @@ macro_rules! align32 {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    use alloc::format;
+
     use nom::error::ErrorKind;
     use nom::number::streaming::{be_u16, be_u32};
     use nom::{error_position, Err, IResult, Needed};
