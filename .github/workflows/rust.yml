@@ -27,14 +27,28 @@ jobs:
         run: cargo update
       - run: RUSTFLAGS="-D warnings" cargo check
 
-  test:
-    name: Test Suite
+  test_features:
+    name: Test suite (with features)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        features:
+          - --features=default
+          - --all-features
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - run: cargo test ${{ matrix.features }}
+
+  test_no_std:
+    name: Test suite (no-std)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
-      - run: cargo test
+      - run: RUSTFLAGS="-D warnings" cargo test --no-default-features
 
   fmt:
     name: Rustfmt
