@@ -1,6 +1,8 @@
 //! Helper functions and structures for debugging purpose
 
 use alloc::format;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
 use core::fmt;
 #[cfg(feature = "std")]
 use nom::{
@@ -44,6 +46,9 @@ impl<'a> fmt::Debug for HexSlice<'a> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    use alloc::format;
+
     use crate::debug;
 
     #[test]
