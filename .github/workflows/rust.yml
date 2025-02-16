@@ -7,6 +7,10 @@ on:
   schedule:
     - cron: '0 18 * * *'
 
+env:
+  check_ext_rust_version: nightly-2024-06-30
+  # ^ sync with https://github.com/awslabs/cargo-check-external-types/blob/main/rust-toolchain.toml
+
 jobs:
   check:
     name: Check
@@ -19,13 +23,12 @@ jobs:
           - nightly
     steps:
       - uses: actions/checkout@v4
-      - name: Install ${{ matrix.rust }} toolchain
-        uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
       - name: Cargo update
         run: cargo update
-      - run: RUSTFLAGS="-D warnings" cargo check
+      - run: cargo check
 
   test_features:
     name: Test suite (with features)
@@ -41,22 +44,20 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - run: cargo test ${{ matrix.features }}
 
-  test_no_std:
-    name: Test suite (no-std)
+  no_std:
+    name: no-std
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - run: RUSTFLAGS="-D warnings" cargo test --no-default-features
+      - uses: dtolnay/rust-toolchain@stable
+      - run: RUSTFLAGS="-D warnings" cargo check --no-default-features
 
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install stable rustfmt
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
       - run: cargo fmt --all -- --check
@@ -66,11 +67,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install nightly clippy
-        uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
-      - run: cargo clippy -- -D warnings
+      - run: cargo clippy --all-features -- -D warnings
 
   doc:
     name: Build documentation
@@ -79,8 +79,7 @@ jobs:
       RUSTDOCFLAGS: --cfg docsrs
     steps:
       - uses: actions/checkout@v4
-      - name: Install nightly rust
-        uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@nightly
       - run: cargo doc --workspace --no-deps --all-features
 
   semver:
@@ -101,7 +100,6 @@ jobs:
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2024-05-01
-          # ^ sync with https://github.com/awslabs/cargo-check-external-types/blob/main/rust-toolchain.toml
-      - run: cargo install cargo-check-external-types
+          toolchain: ${{ env.check_ext_rust_version }}
+      - run: cargo install --locked cargo-check-external-types
       - run: cargo check-external-types
