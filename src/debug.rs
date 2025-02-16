@@ -39,7 +39,7 @@ impl fmt::Debug for HexU16 {
 /// Wrapper for printing slice as hex data
 pub struct HexSlice<'a>(pub &'a [u8]);
 
-impl<'a> fmt::Debug for HexSlice<'a> {
+impl fmt::Debug for HexSlice<'_> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let s: Vec<_> = self.0.iter().map(|&i| format!("{:02x}", i)).collect();
         write!(fmt, "[{}]", s.join(" "))
