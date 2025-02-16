@@ -2,7 +2,7 @@
 
 use nom::bytes::complete::take;
 use nom::combinator::map_res;
-use nom::IResult;
+use nom::{IResult, Parser};
 
 #[doc(hidden)]
 pub mod export {
@@ -136,7 +136,7 @@ macro_rules! parse_hex_to_u64 (
 #[allow(deprecated)]
 #[inline]
 pub fn parse_uint24(i: &[u8]) -> IResult<&[u8], u64> {
-    map_res(take(3usize), bytes_to_u64)(i)
+    map_res(take(3usize), bytes_to_u64).parse(i)
 }
 
 //named!(parse_hex4<&[u8], u64>, parse_hex_to_u64!(4));

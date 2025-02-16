@@ -3,9 +3,7 @@
 use nom::bytes::streaming::take;
 use nom::combinator::map_parser;
 use nom::error::{make_error, ErrorKind, ParseError};
-use nom::{IResult, Needed, Parser};
-use nom::{InputIter, InputTake};
-use nom::{InputLength, ToUsize};
+use nom::{IResult, Input, Needed, Parser, ToUsize};
 
 #[deprecated(since = "3.0.1", note = "please use `be_var_u64` instead")]
 /// Read an entire slice as a big-endian value.
@@ -69,7 +67,7 @@ pub fn parse_hex_to_u64<S>(i: &[u8], size: S) -> IResult<&[u8], u64>
 where
     S: ToUsize + Copy,
 {
-    map_parser(take(size.to_usize()), be_var_u64)(i)
+    map_parser(take(size.to_usize()), be_var_u64).parse(i)
 }
 
 /// Apply combinator, automatically converts between errors if the underlying type supports it
@@ -94,10 +92,10 @@ where
 /// Return a closure that takes `len` bytes from input, and applies `parser`.
 pub fn flat_take<I, C, O, E, F>(len: C, mut parser: F) -> impl FnMut(I) -> IResult<I, O, E>
 where
-    I: InputTake + InputLength + InputIter,
+    I: Input,
     C: ToUsize + Copy,
     E: ParseError<I>,
-    F: Parser<I, O, E>,
+    F: Parser<I, Output = O, Error = E>,
 {
     // Note: this is the same as `map_parser(take(len), parser)`
     move |input: I| {
@@ -110,11 +108,10 @@ where
 /// Take `len` bytes from `input`, and apply `parser`.
 pub fn flat_takec<I, O, E, C, F>(input: I, len: C, parser: F) -> IResult<I, O, E>
 where
-    I: InputTake + InputLength + InputIter,
-    O: InputLength,
+    I: Input,
     E: ParseError<I>,
     C: ToUsize + Copy,
-    F: Parser<I, O, E>,
+    F: Parser<I, Output = O, Error = E>,
 {
     flat_take(len, parser)(input)
 }
@@ -128,8 +125,8 @@ pub fn cond_else<I, O, E, C, F, G>(
 where
     E: ParseError<I>,
     C: Fn() -> bool,
-    F: Parser<I, O, E>,
-    G: Parser<I, O, E>,
+    F: Parser<I, Output = O, Error = E>,
+    G: Parser<I, Output = O, Error = E>,
 {
     move |input: I| {
         if cond() {

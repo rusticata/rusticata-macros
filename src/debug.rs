@@ -13,7 +13,9 @@ use nom::{
 /// Dump the remaining bytes to stderr, formatted as hex
 #[cfg(feature = "std")]
 pub fn dbg_dmp_rest(i: &[u8]) -> IResult<&[u8], ()> {
-    map(peek(rest), |r: &[u8]| eprintln!("\n{}\n", r.to_hex(16)))(i)
+    use nom::Parser;
+
+    map(peek(rest), |r: &[u8]| eprintln!("\n{}\n", r.to_hex(16))).parse(i)
 }
 
 /// Wrapper for printing value as u8 hex data
