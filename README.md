@@ -33,6 +33,7 @@ See the documentation for more details and examples.
 
 Different versions of this crate are available, depending on nom version.
 
+- `rusticata-macros` 5.x depends on nom 8
 - `rusticata-macros` 4.x depends on nom 7
 - `rusticata-macros` 3.x depends on nom 6
 - `rusticata-macros` 2.x depends on nom 5
